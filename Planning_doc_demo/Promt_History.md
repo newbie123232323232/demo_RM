@@ -80,6 +80,73 @@
    - `demo_prompt.md` thiếu baseline assumption (main phải có baseline module).
    **Đã fix tất cả 4 landmine** rồi mới close. File ảnh hưởng: `devplan_checklist.md`, `demo_prompt.md`, `ProductsController.cs`, `issues_history.md`. Re-run `dotnet test` lần cuối để confirm 26/26 vẫn pass sau khi đổi message.
 
+10. **User:** manual test Add Product nhìn chung OK, chỉ còn UX lỗi: lọc theo tên chưa apply ngay; phải click ra ngoài hoặc làm action khác mới thấy list lọc. Yêu cầu fix và hỏi test coverage.
+    **AI:** lần đầu thử chuyển event sang `(input)` + thêm unit test frontend để khóa behavior debounce/live search; build pass nhưng môi trường chặn ChromeHeadless nên không chạy unit test runtime được. Sau đó user xác nhận không cần unit test theo scope step hiện tại.
+    **File bị ảnh hưởng (vòng thử nghiệm):**
+    - `module_src/frontend/src/app/pages/products/products.component.html` (đổi event input).
+    - `module_src/frontend/src/app/pages/products/products.component.spec.ts` (được tạo tạm, rồi xóa theo yêu cầu user).
+    - `module_src/frontend/src/app/app.component.spec.ts` (được chỉnh tạm, rồi revert theo yêu cầu user).
+
+11. **User:** xác nhận không cần unit test, chỉ test theo style các step trước; yêu cầu bỏ unit test.
+    **AI:** xóa `products.component.spec.ts`, revert `app.component.spec.ts` về trạng thái cũ để nhánh demo không có thay đổi test ngoài scope.
+
+12. **User:** báo bug vẫn còn: gõ `"demo"` chưa lọc ngay, chỉ khi bấm trang sau mới refresh list đúng.
+    **AI:** chốt fix chắc chắn hơn:
+    - Template dùng `(ngModelChange)="onSearchChanged($event)"`.
+    - Component `onSearchChanged(value: string)` set trực tiếp `searchTerm = value` trước khi trigger debounce stream.
+    - Giữ debounce 300ms, không phụ thuộc blur/click-out.
+    - Rebuild frontend pass.
+    **File bị ảnh hưởng:**
+    - `module_src/frontend/src/app/pages/products/products.component.html`
+    - `module_src/frontend/src/app/pages/products/products.component.ts`
+
+13. **User:** yêu cầu cập nhật tài liệu theo đúng các chỉnh sửa UI/UX vừa phát hiện (bao gồm cả đoạn unit test đã thử rồi bỏ).
+    **AI:** cập nhật:
+    - `Planning_doc_demo/issues_history.md`: thêm 2 incident mới (text-filter live bug; unit-test scope drift + rollback).
+    - `Planning_doc_demo/Lessonlearn.md`: thêm rule chuẩn event cho text filter debounce và rule phạm vi test theo demo-step.
+    - Sau đó user yêu cầu cập nhật timeline `Promt_History.md` (entry này).
+
+14. **User:** xác nhận cần tuân thủ rule mirror tài liệu cho training người mới: cứ ghi `issues_history` của `Planning_doc` vào `Planning_doc_demo`, tương tự với `Lessonlearn`; nội dung thừa/chuyên hóa vẫn chấp nhận.
+    **AI:** áp dụng ngay bằng cách bổ sung policy bắt buộc vào docs demo:
+    - `Planning_doc_demo/issues_history.md` thêm section **Mirror policy với Planning_doc/issues_history.md**.
+    - `Planning_doc_demo/Lessonlearn.md` thêm section **Mirror policy với Planning_doc/Lessonlearn.md**.
+    - Chốt nguyên tắc: ưu tiên "memory đầy đủ để training", mỗi entry mirror có thể giữ source để trace.
+
+15. **User:** yêu cầu làm luôn sync pass để v2 Add Product có thể code nhanh và chuẩn như v1.
+    **AI:** thực hiện mirror batch #1 từ `Planning_doc` sang `Planning_doc_demo`:
+    - `issues_history.md`: import 5 issue workflow leverage cao cho v2 (contract drift, runtime gate, deterministic tests, provider parity, BE/FE error-contract rollout).
+    - `Lessonlearn.md`: import 5 lesson vận hành quan trọng (runbook-first, port hygiene, close-step gate, cross-consumer smoke, runtime-signal over task-noise).
+    - Tất cả batch mới đều gắn `Source` rõ ràng để trace nguồn.
+
+16. **User:** yêu cầu distill-final `demo_prompt.md` để sẵn sàng code lại v2 thật nhanh và chuẩn.
+    **AI:** rewrite `Planning_doc_demo/demo_prompt.md` thành bản distilled:
+    - Giữ protocol training 4 bước ở đầu (context-check -> FA/checklist -> step intent -> step gates).
+    - Rút prompt paste xuống dạng gọn/chặt, ưu tiên nguồn từ chính `Planning_doc_demo`.
+    - Chốt rõ technical contract + UI/a11y contract + test/doc/review gates + final output format.
+    - Giữ song ngữ VI-EN nhưng loại bỏ phần dư/nhắc lại không cần thiết.
+
+17. **User:** đồng ý làm thêm dry-run checklist cho demo live.
+    **AI:** tạo file mới `Planning_doc_demo/demo_dry_run_checklist.md` (1 trang, dạng tick-box) gồm:
+    - pre-flight 5 checks trước khi paste prompt,
+    - 3 checks sau mỗi step,
+    - review gates bắt buộc (sau D2, sau D6, trước close),
+    - định nghĩa done cuối buổi demo,
+    - fallback ngắn khi demo lệch kỳ vọng.
+
+18. **User:** yêu cầu harden prompt theo đúng tinh thần ban đầu lúc build Add Product v1: phải khởi động bằng plan mode, step-gated chặt, không cheat bằng copy checklist cũ.
+    **AI:** cập nhật `Planning_doc_demo/demo_prompt.md`:
+    - thêm `Startup rule` cho cả VI/EN: bắt đầu bằng Plan Mode, bắt buộc 2 câu context-check + regenerate checklist + step intent/prove-done rồi mới được code.
+    - thêm `No-cheat` rule: cấm copy checklist cũ nguyên trạng; chỉ dùng làm reference.
+    - thêm `Hard stop` ở execution: step chưa pass verify/test/docs-sync thì không được qua step kế.
+
+19. **User:** yêu cầu nâng prompt lên mức "siêu chuẩn".
+    **AI:** thêm section `Failure modes & recovery rules` (VI + EN) vào `demo_prompt.md`, chốt 5 nhóm guardrail:
+    - file-lock recovery cho `dotnet build`/`ef` (`MSB3021/MSB3027`),
+    - runtime-first triage khi UI lỗi data (`FE -> API -> /health -> data endpoint`),
+    - bắt buộc cross-consumer smoke khi đổi endpoint dùng chung (`/lab/products`, `/lab/bill`, `/lab/revenue`),
+    - deterministic integration test discipline (GUID scoped data, assert cô lập),
+    - mirror policy high-rigor (giữ cả entry chuyên hóa + source tag traceability).
+
 ---
 
 (Tiếp tục cập nhật theo từng exchange quyết định lớn.)

@@ -1,0 +1,205 @@
+<section class="page products-page">
+  <header class="page-header">
+    <h1>Quản lý sản phẩm</h1>
+    <p class="hint">Thêm / xem / sửa / xoá sản phẩm dùng trong các bill. Filter theo tên + khoảng giá.</p>
+  </header>
+
+  <p *ngIf="errorMessage" class="error" role="alert" aria-live="assertive">{{ errorMessage }}</p>
+
+  <div class="card filters-card">
+    <div class="section-head">
+      <h3>Bộ lọc sản phẩm</h3>
+    </div>
+    <div class="filters">
+      <label>
+        <span class="label-text">Tìm theo tên</span>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onSearchChanged($event)"
+          placeholder="Ví dụ: tai nghe"
+          autocomplete="off" />
+      </label>
+
+      <label>
+        <span class="label-text">Giá từ (VND)</span>
+        <input
+          type="number"
+          min="0"
+          [(ngModel)]="priceMin"
+          (ngModelChange)="onPriceFilterChanged()"
+          placeholder="Tối thiểu" />
+      </label>
+
+      <label>
+        <span class="label-text">Giá đến (VND)</span>
+        <input
+          type="number"
+          min="0"
+          [(ngModel)]="priceMax"
+          (ngModelChange)="onPriceFilterChanged()"
+          placeholder="Tối đa" />
+      </label>
+    </div>
+
+    <div class="filters-bottom">
+      <span class="hint" *ngIf="hasActiveFilters">Đang lọc theo bộ tiêu chí ở trên.</span>
+      <span class="hint" *ngIf="!hasActiveFilters">Không có bộ lọc nào đang áp dụng.</span>
+      <div class="filters-actions">
+        <button type="button" class="btn-ghost" (click)="resetFilters()" [disabled]="!hasActiveFilters">Reset bộ lọc</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card list-card">
+    <div class="section-head">
+      <h3>Danh sách sản phẩm</h3>
+      <span class="hint" *ngIf="totalCount > 0">{{ totalCount }} sản phẩm.</span>
+      <span class="picker-spacer"></span>
+      <button type="button" class="btn-primary" (click)="openCreateDialog()">+ Thêm sản phẩm</button>
+    </div>
+
+    <p *ngIf="loading" class="hint">Đang tải sản phẩm...</p>
+
+    <div *ngIf="!loading && products.length === 0" class="card empty-card">
+      <p class="hint">Không có sản phẩm phù hợp với bộ lọc.</p>
+    </div>
+
+    <div class="table-scroll" *ngIf="!loading && products.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>Tên sản phẩm</th>
+            <th class="col-num">Đơn giá (VND)</th>
+            <th class="col-actions">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of products">
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td class="col-num">{{ product.unitPriceVnd | number }}</td>
+            <td class="col-actions">
+              <button type="button" class="btn-ghost btn-sm" (click)="openEditDialog(product)" [attr.aria-label]="'Sửa sản phẩm ' + product.name">Sửa</button>
+              <button type="button" class="btn-danger btn-sm" (click)="openDeleteDialog(product)" [attr.aria-label]="'Xoá sản phẩm ' + product.name">Xoá</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination" *ngIf="!loading && totalPages > 0">
+      <button type="button" (click)="previousPage()" [disabled]="currentPage <= 1">Trang trước</button>
+      <span class="hint">Trang {{ currentPage }} / {{ totalPages }}</span>
+      <button type="button" (click)="nextPage()" [disabled]="currentPage >= totalPages">Trang sau</button>
+      <label class="page-size-inline">
+        <span>SP/trang</span>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChanged()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="15">15</option>
+          <option [ngValue]="20">20</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <!-- Add/Edit dialog -->
+  <div class="product-dialog-backdrop" *ngIf="openDialog === 'form'" (click)="closeDialog()">
+    <div
+      #formDialog
+      class="product-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="product-form-title"
+      tabindex="-1"
+      (keydown.escape)="closeDialog()"
+      (keydown)="onDialogKeydown($event, 'form')"
+      (click)="$event.stopPropagation()">
+      <div class="product-dialog-header">
+        <h3 id="product-form-title">
+          {{ formMode === 'create' ? 'Thêm sản phẩm mới' : 'Sửa sản phẩm #' + formId }}
+        </h3>
+        <button type="button" class="btn-ghost btn-sm" (click)="closeDialog()" aria-label="Đóng" [disabled]="formSubmitting">×</button>
+      </div>
+
+      <form (ngSubmit)="submitForm()" novalidate>
+        <label class="dialog-field">
+          <span class="label-text">Tên sản phẩm</span>
+          <input
+            #nameInput
+            type="text"
+            name="name"
+            [(ngModel)]="formName"
+            (blur)="validateNameOnBlur()"
+            [disabled]="formSubmitting"
+            maxlength="160"
+            required
+            autocomplete="off" />
+          <span *ngIf="formNameError" class="error inline-error" role="alert" aria-live="polite">{{ formNameError }}</span>
+        </label>
+
+        <label class="dialog-field">
+          <span class="label-text">Đơn giá (VND)</span>
+          <input
+            type="number"
+            name="unitPriceVnd"
+            min="1"
+            step="1000"
+            [(ngModel)]="formUnitPriceVnd"
+            (blur)="validatePriceOnBlur()"
+            [disabled]="formSubmitting"
+            required />
+          <span *ngIf="formPriceError" class="error inline-error" role="alert" aria-live="polite">{{ formPriceError }}</span>
+        </label>
+
+        <p *ngIf="formError" class="error inline-error" role="alert" aria-live="assertive">{{ formError }}</p>
+
+        <div class="product-dialog-actions">
+          <span class="picker-spacer"></span>
+          <button type="button" (click)="closeDialog()" [disabled]="formSubmitting">Hủy</button>
+          <button type="submit" class="btn-primary" [disabled]="formSubmitting">
+            {{ formSubmitting ? 'Đang lưu...' : 'Xác nhận' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete confirm dialog -->
+  <div class="product-dialog-backdrop" *ngIf="openDialog === 'delete' && deleteTarget" (click)="closeDialog()">
+    <div
+      #deleteDialog
+      class="product-dialog product-dialog-confirm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="product-delete-title"
+      aria-describedby="product-delete-body"
+      tabindex="-1"
+      (keydown.escape)="closeDialog()"
+      (keydown)="onDialogKeydown($event, 'delete')"
+      (click)="$event.stopPropagation()">
+      <div class="product-dialog-header">
+        <h3 id="product-delete-title">Xác nhận xoá</h3>
+        <button type="button" class="btn-ghost btn-sm" (click)="closeDialog()" aria-label="Đóng" [disabled]="deleteSubmitting">×</button>
+      </div>
+
+      <p id="product-delete-body">
+        Bạn có chắc muốn xoá sản phẩm
+        <strong>"{{ deleteTarget.name }}"</strong> (Id #{{ deleteTarget.id }})?
+        Hành động này không thể hoàn tác.
+      </p>
+
+      <p *ngIf="deleteError" class="error inline-error" role="alert" aria-live="assertive">{{ deleteError }}</p>
+
+      <div class="product-dialog-actions">
+        <span class="picker-spacer"></span>
+        <button type="button" #deleteCancelBtn (click)="closeDialog()" [disabled]="deleteSubmitting">Hủy</button>
+        <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="deleteSubmitting">
+          {{ deleteSubmitting ? 'Đang xoá...' : 'Xoá' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
