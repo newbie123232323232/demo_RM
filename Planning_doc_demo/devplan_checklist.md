@@ -98,7 +98,7 @@
 - [ ] **D5-F2.** State trong component: `isFormOpen`, `formMode: 'create' | 'edit'`, `formProduct: { id?, name, unitPriceVnd }`, `formError`, `isSubmitting`.
 - [ ] **D5-F3.** Mở từ "Thêm sản phẩm" → mode create, form rỗng. Mở từ "Sửa" trên row → mode edit, form prefill.
 - [ ] **D5-F4.** A11y: `role="dialog"`, `aria-modal="true"`, `aria-labelledby` trỏ tới heading (id duy nhất), `tabindex="-1"`, focus dialog khi mở, Esc đóng, click backdrop đóng, click trong dialog stopPropagation, body scroll lock, return focus tới opener khi đóng, Tab/Shift+Tab focus trap.
-- [ ] **D5-F5.** Validation client-side: trim name, error nếu rỗng hoặc > 200 ký tự, error nếu unitPriceVnd ≤ 0.
+- [ ] **D5-F5.** Validation client-side: trim name, error nếu rỗng hoặc > 160 ký tự (khớp DB constraint), error nếu unitPriceVnd ≤ 0.
 - [ ] **D5-F6.** Submit: disable nút trong khi loading; map lỗi `400 invalid_payload` từ backend hiển thị inline trong modal; happy path → đóng modal + reload list giữ nguyên page filter.
 
 ### Checkpoint prove done D5
@@ -113,7 +113,7 @@
 - [ ] **D6-F1.** State `isDeleteConfirmOpen`, `deleteTarget: ProductListItem | null`, `deleteError`, `isDeletingNow`.
 - [ ] **D6-F2.** Modal confirm dùng cùng pattern a11y. Body show tên product. Nút "Xoá" có class `btn-danger`.
 - [ ] **D6-F3.** Submit DELETE: nếu happy → đóng dialog + reload list. Nếu 409 → hiển thị lỗi inline trong dialog "Sản phẩm đang được dùng trong bill, không thể xoá", giữ dialog mở để user thấy.
-- [ ] **D6-F4.** Nếu 404 → hiển thị "Sản phẩm không tồn tại hoặc đã bị xoá", reload list, đóng dialog.
+- [ ] **D6-F4.** Nếu 404 → hiển thị "Sản phẩm không tồn tại hoặc đã bị xoá. Bấm 'Hủy' để đóng và làm mới danh sách.", reload list, **giữ dialog mở** (user tự đóng bằng nút Hủy). KHÔNG dùng setTimeout auto-close để tránh race với user thao tác mới.
 
 ### Checkpoint prove done D6
 - [ ] **D6-P1.** Build pass.

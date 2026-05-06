@@ -29,7 +29,7 @@
    - `Promt_History.md` (file này).
    - `demo_prompt.md` (stub, distill cuối v1).
 
-5. **AI (self-driven):** sau khi Step D1 + D2 backend xong (12 test mới + 11 cũ pass), tự trigger council review adversarial theo `using-superpowers` rule. Subagent reviewer phát hiện:
+5. **AI (self-driven backend council):** sau khi Step D1 + D2 backend xong (12 test mới + 11 cũ pass), tự trigger council review adversarial theo `using-superpowers` rule. Subagent reviewer phát hiện:
    - CRITICAL: `BillLine.ProductId` thiếu DB-level FK → race + orphan rows.
    - MAJOR: 409 message English không khớp BR; thiếu validate `priceMin > priceMax`; thiếu test `name=null`, `pageSize > 100` clamp.
    - MINOR: ILike không escape wildcard, không có optimistic concurrency, `UnitPriceVnd` không cap upper bound.
@@ -44,6 +44,41 @@
    - `module_src/backend/RevenueModule.Api.Tests/DemoProductCrudIntegrationTests.cs` (+3 test, total 15 test).
    - `Planning_doc_demo/business_requirements.md` + `Lessonlearn.md` + `issues_history.md` đồng bộ.
    - Re-run full suite: 26/26 pass.
+
+6. **AI (self-driven implementation D3-D6):** triển khai full FE products page trong 1 component standalone (`ProductsPageComponent`):
+   - Route `/lab/products` + nav link "Sản phẩm" giữa "Lập bill" và "Quản lý doanh thu" (giữ nguyên `routerLinkActive` + `aria-current` Phase 1).
+   - List + filter (search debounce 300ms, priceMin/Max debounce 300ms) + pagination + empty/loading/error.
+   - Modal Add/Edit shared (mode-based) + Modal Confirm Delete — cả hai bám pattern hardened revenue page (role/aria-modal/aria-labelledby/focus-trap/scroll-lock/return-focus).
+   - Validation client-side (blur), map lỗi 400/404/409 từ backend, hiển thị inline trong dialog.
+   - `npx ng build --configuration=development` pass.
+
+7. **AI (self-driven frontend council):** trigger council adversarial sau D6. Subagent reviewer phát hiện:
+   - CRITICAL: forward Tab từ dialog shell escape modal (focus trap incomplete).
+   - MAJOR: text/number input không disable trong submit; aria-live thiếu trên error spans; row action button không có context sản phẩm cho AT; nested `setTimeout(0) + setTimeout(30)` racy; delete dialog thiếu `aria-describedby`; initial focus trên dialog shell thay vì Hủy cho destructive; price filter chưa debounce (DoS risk).
+   - MINOR: placeholder không exposed; API shape coupling.
+   - NIT: backdrop hardcoded rgba (matches reference).
+   **Quyết định triage:**
+   - Accept critical + 6 majors + 1 minor (debounce price filter).
+   - Reject major #3 (focus restore on destroy — opener có thể đã unmount, restore overflow là đủ).
+   - Reject major #5 (label-wrap cấu trúc khớp existing fake-bill/revenue, partial fix qua aria-live).
+   - Defer #10/#13.
+   **File bị ảnh hưởng:**
+   - `module_src/frontend/src/app/pages/products/products.component.ts` (+ deleteCancelBtn ref, priceFilterDebounce$, single setTimeout focus, forward Tab from shell wrap, removed auto-close 404 setTimeout race).
+   - `module_src/frontend/src/app/pages/products/products.component.html` (role="alert"/aria-live trên errors; aria-label row buttons; disabled inputs trong submit; aria-describedby delete dialog).
+   - Re-build pass; lint sạch.
+
+8. **AI (self-driven D7 verification):**
+   - Full backend `dotnet test` 26/26 pass (sau khi sửa thêm `product_not_found` message sang VN cho khớp BR).
+   - Smoke API end-to-end: `/health` ok; `GET /api/products` no-param → array (backward-compat); `?page=1&pageSize=5` → paged object; `?priceMin>priceMax` → 400 invalid_price_range; POST/PUT happy + POST invalid → 400; DELETE happy → 204; DELETE not-found → 404; DELETE Product Id 1 (đang dùng trong bill) → 409 conflict_product_in_use.
+   - Frontend `npx ng build --configuration=development` pass.
+   - 2 page hiện hữu (`/lab/bill`, `/lab/revenue`) dùng `GET /api/products` no-param vẫn nhận array — không regression.
+
+9. **AI (self-driven final council on demo_prompt):** sau khi distill `demo_prompt.md`, trigger council adversarial cuối để verify đủ tái lập v2. Reviewer phát hiện 4 landmine:
+   - D5-F5 vẫn ghi "200 ký tự" thay vì "160".
+   - D6-F4 ghi "đóng dialog" khi 404 — drift với v1 (giữ dialog mở).
+   - Null body trả English message.
+   - `demo_prompt.md` thiếu baseline assumption (main phải có baseline module).
+   **Đã fix tất cả 4 landmine** rồi mới close. File ảnh hưởng: `devplan_checklist.md`, `demo_prompt.md`, `ProductsController.cs`, `issues_history.md`. Re-run `dotnet test` lần cuối để confirm 26/26 vẫn pass sau khi đổi message.
 
 ---
 

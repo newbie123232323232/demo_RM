@@ -27,6 +27,16 @@
   - Return focus tới opener khi đóng (lưu opener qua `document.activeElement` lúc mở).
   - Tab/Shift+Tab focus trap trong dialog.
 - Modal nào đã có sẵn helper (`releaseProductPickerSideEffects`, `onPickerKeydown` ở revenue page) thì khi tạo modal mới có thể tạo helper riêng cùng pattern, không share state cross-component.
+- **Focus trap đầy đủ cần 3 nhánh** (revenue picker chỉ có 2 — phát hiện trong council FE D6, đã fix ở products page):
+  1. Shift+Tab khi `active === first || active === dialog` → wrap về `last`.
+  2. Tab khi `active === last` → wrap về `first`.
+  3. Tab khi `active === dialog` (focus đang trên `tabindex="-1"` shell) → forward sang `first`. Nếu thiếu nhánh này, focus thoát ra ngoài modal.
+- **Initial focus cho destructive confirm dialog** đặt trên nút Hủy (không phải nút Xoá) để tránh user vô tình Enter/Space → confirm.
+- **Error elements trong dialog/page** bắt buộc có `role="alert"` + `aria-live`:
+  - `aria-live="polite"` cho field-level validation (không gián đoạn ngữ cảnh).
+  - `aria-live="assertive"` cho dialog-level/page-level error (nội dung quan trọng cần nghe ngay).
+- **Action button trong table row** luôn có `[attr.aria-label]="'<verb> ' + entity.<displayName>"` để screen reader có context entity, không chỉ "Sửa" / "Xoá" trống nghĩa.
+- **Disable input + button trong submit lifetime** (không chỉ disable nút) để chặn state drift khi network chậm.
 
 ## 4. Quy ước FK conflict semantics
 
