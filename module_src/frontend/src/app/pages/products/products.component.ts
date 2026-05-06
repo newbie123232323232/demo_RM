@@ -155,7 +155,8 @@ export class ProductsPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  onSearchChanged(): void {
+  onSearchChanged(value: string): void {
+    this.searchTerm = value;
     this.searchDebounce$.next();
   }
 

@@ -77,3 +77,60 @@
 - **Tác động:** Ngừng vòng iter; suýt nhầm là code lỗi.
 - **Đã xử lý:** `Stop-Process -Id 21924 -Force` rồi `dotnet build` lại — pass ngay.
 - **Quy ước tiếp theo:** Trước mọi `dotnet build` / `dotnet ef migrations add` / `dotnet ef database update` trong phiên có API chạy nền: kill PID listening port 5093 trước (khớp lesson cũ trong `Planning_doc/Lessonlearn.md` mục dọn cổng).
+
+### 2026-05-06 — UX bug: filter tên không apply ngay khi gõ
+
+- **Issue:** User manual test phát hiện tìm tên product có lúc không apply ngay (ví dụ gõ `"demo"` không lọc tức thì), chỉ thấy kết quả đúng sau hành động khác gây refresh list (như bấm trang sau/trang trước). Trong khi filter giá đã live.
+- **Tác động:** Trải nghiệm lọc không nhất quán, dễ bị hiểu nhầm là API filter theo `q` không hoạt động.
+- **Đã xử lý:**
+  1. Trước tiên thử chuyển event text filter sang `(input)` nhưng vẫn có case timing lệch giữa event và state khi debounce.
+  2. Chốt fix ổn định: dùng `(ngModelChange)="onSearchChanged($event)"` và trong component set trực tiếp `searchTerm = value` trước khi `.next()` vào debounce stream.
+  3. Giữ debounce 300ms như spec, không cần blur/click-out để apply.
+  4. Rebuild FE pass sau fix.
+- **Quy ước tiếp theo:** Với text filter có debounce trong Angular forms, ưu tiên nhận giá trị mới trực tiếp từ `ngModelChange` payload rồi ghi vào state trước khi trigger stream; không phụ thuộc ngầm vào timing đồng bộ của two-way binding.
+
+### 2026-05-06 — Scope test drift: thêm unit test rồi rollback theo yêu cầu demo-step
+
+- **Issue:** Trong lúc fix UX filter tên, AI có thêm unit test frontend (spec cho `ProductsPageComponent`) để khóa hành vi debounce + live search, đồng thời chỉnh `app.component.spec.ts` cho nav link mới. Tuy nhiên user xác nhận không cần unit test, chỉ cần test theo style các step trước (build + manual smoke).
+- **Tác động:** Tạo thêm thay đổi ngoài scope mong muốn của user, tăng độ ồn trong nhánh demo.
+- **Đã xử lý:** Xóa file `products.component.spec.ts`, revert `app.component.spec.ts` về trạng thái cũ, giữ lại duy nhất fix logic/runtime cần thiết cho UX.
+- **Quy ước tiếp theo:** Với flow demo-step hiện tại, mặc định không thêm frontend unit test mới nếu user không yêu cầu rõ; ưu tiên đúng contract test đã chốt trước đó.
+
+---
+
+## Mirror policy với `Planning_doc/issues_history.md` (bắt buộc từ 2026-05-06)
+
+- `Planning_doc_demo/issues_history.md` phải **kế thừa và đồng bộ liên tục** các issue workflow hữu dụng từ `Planning_doc/issues_history.md`.
+- Từ mốc này, mỗi khi:
+  - có issue mới trong luồng demo (`Planning_doc_demo`) **hoặc**
+  - có issue mới trong luồng module chung (`Planning_doc`),
+  thì phải cân nhắc mirror sang phía còn lại nếu có giá trị tái sử dụng.
+- Ưu tiên giữ lại cả issue "thừa" hoặc chuyên hóa nếu có khả năng giúp lần implement sau tránh lặp sai.
+- Khi mirror, thêm ghi chú nguồn ở entry:
+  - `Source: Planning_doc/issues_history.md`
+  - hoặc `Source: Planning_doc_demo/issues_history.md`
+- Với training người mới, mục tiêu là "memory càng đầy đủ càng tốt", không tối ưu theo tiêu chí gọn.
+
+### Mirror batch #1 (seed cho v2 Add Product) — Source: `Planning_doc/issues_history.md`
+
+> Các mục dưới đây được chọn vì ảnh hưởng trực tiếp tốc độ/độ ổn định khi build feature mới ở v2.
+
+1. **Contract drift giữa backend DTO và frontend consumer**
+   - Nếu đổi shape response endpoint dùng chung mà không update toàn bộ consumer, UI dễ “mất dữ liệu giả”.
+   - Áp dụng cho v2: mọi thay đổi ở `GET /api/products` phải verify cả `/lab/products`, `/lab/bill`, `/lab/revenue` (ít nhất smoke nhanh).
+
+2. **Runtime gate trước khi debug business**
+   - FE lỗi data có thể chỉ là API down (`ERR_CONNECTION_REFUSED`).
+   - Áp dụng cho v2: luôn kiểm tra thứ tự `FE up -> API up -> /health -> 1 endpoint data` trước khi debug filter/logic.
+
+3. **Test phải deterministic, scope dữ liệu đủ hẹp**
+   - Integration test fail giả khi dùng dataset shared/seed chung.
+   - Áp dụng cho v2: test CRUD/filter Product phải tạo dữ liệu có prefix riêng (GUID tag), assert trên dataset cô lập.
+
+4. **Provider test phải gần runtime thực**
+   - Trộn InMemory và provider runtime gây nhiễu/false fail.
+   - Áp dụng cho v2: giữ pattern test Postgres runtime như Step6IntegrationTests.
+
+5. **Mọi đổi error contract phải rollout đồng bộ BE/FE**
+   - Backend đổi code/message mà FE không parse đúng sẽ tạo UX mơ hồ.
+   - Áp dụng cho v2: khi đổi code/message lỗi product, update luôn map lỗi frontend và smoke nhánh lỗi chính.

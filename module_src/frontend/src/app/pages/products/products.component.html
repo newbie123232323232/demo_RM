@@ -16,7 +16,7 @@
         <input
           type="text"
           [(ngModel)]="searchTerm"
-          (ngModelChange)="onSearchChanged()"
+          (ngModelChange)="onSearchChanged($event)"
           placeholder="Ví dụ: tai nghe"
           autocomplete="off" />
       </label>

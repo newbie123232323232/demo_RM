@@ -95,3 +95,66 @@
   - `demo(product): frontend modal add/edit + a11y`
   - `demo(product): frontend confirm delete + 409 handling`
   - `demo(product): planning_doc_demo finalize + distill demo_prompt.md`
+
+## 11. Quy ước event cho text filter có debounce
+
+- Với ô tìm kiếm text có debounce, ưu tiên pattern:
+  - Template: `(ngModelChange)="onSearchChanged($event)"`
+  - Component: `onSearchChanged(value: string) { this.searchTerm = value; this.searchDebounce$.next(); }`
+- Lý do: đảm bảo state cập nhật từ payload mới nhất trước khi trigger stream, tránh case lệch timing khiến UI trông như "không filter cho đến khi có action refresh khác".
+- Không phụ thuộc vào blur/click-out để apply filter text.
+
+## 12. Quy ước phạm vi test theo demo-step
+
+- Nếu user chốt "test như các step trước", mặc định chỉ làm:
+  - build pass (`ng build` / `dotnet test` theo step),
+  - manual smoke trọng tâm theo behavior vừa sửa.
+- Không tự thêm unit test/frontend spec mới nếu user chưa yêu cầu rõ.
+- Nếu đã lỡ thêm test ngoài scope rồi user từ chối, rollback sạch ngay để giảm nhiễu nhánh demo.
+
+## 13. Quy ước cập nhật guideline/checklist theo từng step
+
+- Cuối **mỗi step** sau khi prove done:
+  - cập nhật trạng thái step/task trong checklist tương ứng,
+  - ghi rõ những task phát sinh khi test/debate/fix (không được làm xong rồi quên log).
+- Nếu có thay đổi scope nhỏ trong quá trình step, phải phản ánh lại vào checklist để người đọc sau thấy được lịch sử coding và quyết định.
+
+## 14. Quy ước issue list trong quá trình làm function
+
+- Mỗi sai lầm/phát hiện lỗi (do user phát hiện hoặc AI tự phát hiện) phải được ghi ngay vào `issues_history.md`.
+- Mỗi issue phải có tối thiểu:
+  - vấn đề,
+  - tác động,
+  - cách giải quyết đã áp dụng (nếu có),
+  - rule phòng tránh cho lần sau.
+- Được phép dùng `Planning_doc/issues_history.md` làm mẫu format để giữ tính tái sử dụng giữa các function.
+
+## 15. Quy ước lesson learn theo step/function
+
+- Sau các mốc lớn (xong step, xong function nhóm), bắt buộc distill lesson vào `Lessonlearn.md`.
+- Lesson phải đủ cụ thể để tái dùng:
+  - pattern code nên lặp lại,
+  - anti-pattern cần tránh,
+  - gate verify cần giữ cho các function sau.
+
+## 16. Mirror policy với `Planning_doc/Lessonlearn.md` (bắt buộc từ 2026-05-06)
+
+- `Planning_doc_demo/Lessonlearn.md` phải đồng bộ các lesson vận hành/coding hữu ích từ `Planning_doc/Lessonlearn.md`.
+- Nguyên tắc:
+  - Thêm vào bản demo cả những lesson "rộng" hoặc "thừa nhẹ" nếu có ích cho đào tạo người mới.
+  - Không chỉ mirror một chiều; lesson mới trong demo cũng có thể đẩy ngược về `Planning_doc` khi có giá trị dùng chung.
+- Mỗi lesson mirror nên gắn nguồn:
+  - `Source: Planning_doc/Lessonlearn.md`
+  - hoặc `Source: Planning_doc_demo/Lessonlearn.md`
+- Ưu tiên tính tái sử dụng và khả năng training hơn là rút gọn tài liệu.
+
+## 17. Mirror batch #1 (seed cho v2 Add Product) — Source: `Planning_doc/Lessonlearn.md`
+
+- **Runbook-first:** trước khi code step mới, xác nhận lệnh chạy/build/migrate/test đang dùng đúng format “mục đích: lệnh”; tránh thao tác ad-hoc.
+- **Port hygiene là gate bắt buộc:** trước build/migrate nếu có API đang chạy, dọn process chiếm cổng trước để tránh `MSB3021/MSB3027` gây nhiễu.
+- **Checklist close-step chuẩn:** đóng một step chỉ khi đủ bộ:
+  1) code xong,
+  2) test pass,
+  3) checklist/docs được tick/sync.
+- **Cross-consumer smoke khi endpoint dùng chung thay đổi:** endpoint list/filter được nhiều màn dùng thì phải smoke tất cả màn phụ thuộc trước khi coi là done.
+- **Ưu tiên tín hiệu runtime thật hơn tín hiệu task shell:** task shell fail không đồng nghĩa service fail; xác nhận bằng health/data endpoint trước khi kết luận.
