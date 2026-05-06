@@ -87,9 +87,12 @@ Bạn là AI coding assistant cho demo training người mới. Mục tiêu: tri
 - Route `/lab/products`, nav link “Sản phẩm” giữa bill/revenue, giữ `aria-current`.
 - List + filter + pagination + loading/empty/error states.
 - Search text phải apply live theo debounce 300ms bằng pattern:
-  - template `(ngModelChange)="onSearchChanged($event)"`,
-  - component set state trước khi trigger debounce.
+  - binding theo `input` event (không phụ thuộc blur/click-out),
+  - component set state trước khi trigger debounce stream.
 - Price filters debounce 300ms.
+- Với cặp `priceMin`/`priceMax`:
+  - phải có guard client-side `min <= max` trước khi gọi API,
+  - không được để user thấy lỗi “không tải được danh sách” do trạng thái nhập tạm thời khi đang gõ.
 - Modal Add/Edit + Delete confirm:
   - `role="dialog"`, `aria-modal`, `aria-labelledby`,
   - delete dialog có `aria-describedby`,
@@ -169,6 +172,8 @@ Khi xong, báo ngắn:
   - dữ liệu test có scope/prefix riêng (GUID tag),
   - assert trên dataset cô lập, không phụ thuộc seed dùng chung.
 - Khi mirror bài học/issue giữa `Planning_doc` và `Planning_doc_demo`, ưu tiên giữ lại cả mục chuyên hóa nếu có ích cho training; thêm source tag để trace.
+- Nếu search chỉ apply sau blur/click-out: kiểm tra binding đang chạy theo `input` event, không dùng pattern lệ thuộc blur.
+- Nếu nhập đồng thời min/max gây fail list: kiểm tra guard client-side `priceMin <= priceMax` trước request; tránh đẩy transient invalid range xuống API.
 
 ---
 
@@ -221,9 +226,12 @@ You are the coding assistant for a beginner training demo. Goal: rebuild Add Pro
 - Route `/lab/products`; nav link between bill/revenue with proper `aria-current`.
 - List + filters + pagination + loading/empty/error states.
 - Text search must apply live using debounce 300ms with:
-  - `(ngModelChange)="onSearchChanged($event)"`,
+  - input-event binding (must not depend on blur/click-out),
   - update state before triggering debounce stream.
 - Price filters also debounce 300ms.
+- For paired `priceMin`/`priceMax` filters:
+  - enforce client-side guard `min <= max` before API call,
+  - avoid showing generic list-load failure caused by transient typing states.
 - Add/Edit modal + Delete confirm modal:
   - dialog roles/labels,
   - delete dialog `aria-describedby`,
@@ -302,3 +310,5 @@ You are the coding assistant for a beginner training demo. Goal: rebuild Add Pro
   - test data scoped by unique prefix/GUID tag,
   - assertions isolated from shared seed data.
 - When mirroring lessons/issues between `Planning_doc` and `Planning_doc_demo`, keep specialized entries if useful for training and include source tags for traceability.
+- If search only updates after blur/click-out, verify input-event binding instead of blur-dependent binding.
+- If min/max typing causes list failure, verify client-side `priceMin <= priceMax` guard before request.
