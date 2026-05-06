@@ -156,5 +156,6 @@
 - Không sửa các file thuộc page `/lab/bill` và `/lab/revenue` ngoại trừ:
   - `app.component.html` để thêm nav link "Sản phẩm".
   - File routing để thêm route `/lab/products`.
-- Không động vào `Planning_doc/` cũ.
+- Không động vào `Planning_doc/` cũ cho phần implementation feature.
+- **Ngoại lệ cho tài liệu:** được phép cập nhật mirror tối thiểu vào `Planning_doc/` khi `Planning_doc_demo/Lessonlearn.md` hoặc `issues_history.md` có rule/incident có giá trị tái sử dụng chung (theo mirror policy).
 - Không động vào file plan của Cursor (`.cursor/plans/`).

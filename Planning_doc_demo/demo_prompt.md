@@ -112,12 +112,22 @@ Làm tuần tự theo D1 → D9 trong `devplan_checklist.md`.
   - chỉ mark done khi prove-done pass.
 - Nếu phát sinh task khi test/debate/fix: thêm vào checklist/docs ngay.
 - Hard stop: nếu step hiện tại chưa pass verify/test/docs-sync thì không được chuyển step tiếp theo.
+- Checklist formatting rule:
+  - `-` chỉ dùng cho task có trạng thái (`[ ]`/`[x]`),
+  - `+` dùng cho tiêu chí/spec/validation của task.
+- Dependency rule:
+  - không chuyển step nếu còn task `[ ]` không có lý do,
+  - task chưa done do phụ thuộc phải ghi ngay trên dòng task theo format: `(Pending: phụ thuộc Step Dx - <task>)`.
 
 ### 5) Testing protocol (theo demo-step scope)
 - Ưu tiên test như step trước:
   - backend: `dotnet test`,
   - frontend: `npx ng build --configuration=development`,
   - manual smoke theo UC1-UC5 + regression bill/revenue.
+- Với backend, evidence tối thiểu phải có đủ 3 kênh:
+  - script/automated (`dotnet test` + `step-*.ps1`),
+  - Postman Runner (hoặc `newman` nếu không có GUI Postman),
+  - manual smoke.
 - Chỉ thêm unit test frontend nếu user yêu cầu rõ.
 
 ### 6) Documentation protocol
@@ -137,9 +147,14 @@ Khi xong, báo ngắn:
 - file chính đã sửa/tạo,
 - smoke checklist đã verify,
 - branch + commit hash cuối.
+- Bắt buộc tạo artifact: `Planning_doc_demo/final_output_d9.md` chứa đúng 4 nhóm thông tin trên.
 
 ### 9) Failure modes & recovery rules (siêu chuẩn)
 - Nếu `dotnet build`/`ef` fail kiểu file-lock (`MSB3021/MSB3027`), phải dừng process đang giữ exe/cổng trước khi build/migrate lại.
+- Nếu chạy trong PowerShell: dùng `;` để chain command, không dùng `&&`.
+- Tránh command interactive trong automation:
+  - trước khi chạy `ng serve`, kiểm tra cổng 4200 đã có process chưa,
+  - nếu đã có dev server thì tái sử dụng, không spawn server mới gây prompt.
 - Khi UI lỗi data, debug theo thứ tự cố định:
   1. FE up?,
   2. API up?,
@@ -231,12 +246,22 @@ You are the coding assistant for a beginner training demo. Goal: rebuild Add Pro
   - mark done only when prove-done passes.
 - If new tasks emerge during testing/debate/fix, add them to checklist/docs immediately.
 - Hard stop: if current step has not passed verify/test/docs-sync, do not move to the next step.
+- Checklist formatting rule:
+  - `-` is only for checkbox tasks (`[ ]`/`[x]`),
+  - `+` is for acceptance criteria/spec/validation lines under a task.
+- Dependency rule:
+  - do not move to next step if unchecked tasks remain without explicit reason,
+  - if blocked by dependency, annotate task inline as `(Pending: depends on Step Dx - <task>)`.
 
 ### 5) Testing protocol (demo-step scope)
 - Preferred scope:
   - backend `dotnet test`,
   - frontend `npx ng build --configuration=development`,
   - manual smoke for UC1-UC5 + bill/revenue regression.
+- For backend evidence, require all three channels:
+  - script/automated (`dotnet test` + `step-*.ps1`),
+  - Postman Runner (or `newman` when GUI Postman is unavailable),
+  - manual smoke.
 - Add frontend unit tests only if explicitly requested by user.
 
 ### 6) Documentation protocol
@@ -255,9 +280,14 @@ You are the coding assistant for a beginner training demo. Goal: rebuild Add Pro
 - key files changed/created,
 - smoke checks verified,
 - final branch + commit hash.
+- Mandatory artifact: create `Planning_doc_demo/final_output_d9.md` with the exact four sections above.
 
 ### 9) Failure modes & recovery rules (high-rigor)
 - If `dotnet build`/`ef` fails with file-lock issues (`MSB3021/MSB3027`), stop processes holding exe/ports before rebuilding/migrating.
+- In PowerShell, use `;` for command chaining (do not use `&&`).
+- Avoid interactive commands in automation:
+  - check whether port 4200 is already occupied before `ng serve`,
+  - reuse existing dev server instead of spawning another one that prompts for input.
 - For “UI data not loading”, use fixed runtime triage order:
   1. FE up?,
   2. API up?,
