@@ -29,6 +29,22 @@
    - `Promt_History.md` (file này).
    - `demo_prompt.md` (stub, distill cuối v1).
 
+5. **AI (self-driven):** sau khi Step D1 + D2 backend xong (12 test mới + 11 cũ pass), tự trigger council review adversarial theo `using-superpowers` rule. Subagent reviewer phát hiện:
+   - CRITICAL: `BillLine.ProductId` thiếu DB-level FK → race + orphan rows.
+   - MAJOR: 409 message English không khớp BR; thiếu validate `priceMin > priceMax`; thiếu test `name=null`, `pageSize > 100` clamp.
+   - MINOR: ILike không escape wildcard, không có optimistic concurrency, `UnitPriceVnd` không cap upper bound.
+   **Quyết định triage:**
+   - Accept critical + 2 major (FK migration `DemoProductFkOnBillLine` + VN message + 400 invalid_price_range + 3 tests mới).
+   - Reject "field-level invalid_payload" (message đã name field), "totalPages overflow" (math bounded), "hasFilterParam ambiguity" (intent rõ).
+   - Defer minors vào `Lessonlearn.md` mục "Known limitations".
+   **File bị ảnh hưởng:**
+   - `module_src/backend/RevenueModule.Api/Data/RevenueDbContext.cs` (thêm FK Restrict).
+   - `module_src/backend/RevenueModule.Api/Data/Migrations/20260506041628_DemoProductFkOnBillLine.cs` (mới).
+   - `module_src/backend/RevenueModule.Api/Controllers/ProductsController.cs` (VN msg + try/catch DbUpdateException + 400 invalid_price_range).
+   - `module_src/backend/RevenueModule.Api.Tests/DemoProductCrudIntegrationTests.cs` (+3 test, total 15 test).
+   - `Planning_doc_demo/business_requirements.md` + `Lessonlearn.md` + `issues_history.md` đồng bộ.
+   - Re-run full suite: 26/26 pass.
+
 ---
 
 (Tiếp tục cập nhật theo từng exchange quyết định lớn.)

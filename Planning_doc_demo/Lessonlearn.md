@@ -31,8 +31,9 @@
 ## 4. Quy ước FK conflict semantics
 
 - Xoá entity có FK ràng buộc ở chỗ khác → **không** silent fail, **không** soft-delete ngầm:
-  - Backend: explicit check trước khi xoá, trả `409` với code rõ ràng (`conflict_product_in_use`).
-  - Không dựa vào `DbUpdateException` rồi parse — kém deterministic.
+  - Backend: explicit check trước khi xoá (deterministic 409 với code `conflict_product_in_use`).
+  - **Defense-in-depth:** thêm DB-level FK với `ON DELETE RESTRICT` để DB chặn race giữa application check và `SaveChanges`. Controller bọc `try/catch (DbUpdateException)` và map về cùng 409 — không lộ exception ra client.
+  - Migration cụ thể: `DemoProductFkOnBillLine` (`AddForeignKey BillLines.ProductId → Products.Id`).
 - Frontend: hiển thị lỗi inline trong dialog (giữ dialog mở để user thấy ngay tại điểm thao tác), không hiển thị lỗi global rồi đóng dialog.
 
 ## 5. Quy ước tài liệu auto-log Promt_History.md
@@ -53,7 +54,26 @@
 - Tất cả review chạy adversarial (subagent đóng vai hostile reviewer).
 - Critical findings phải fix ngay; major findings fix nếu effort thấp; minor defer.
 
-## 7. Quy ước commit cho demo
+## 7. Quy ước input validation đối xứng giữa các controller
+
+- Khi mở rộng filter có range (priceMin/priceMax, dateMin/dateMax v.v.):
+  - Bắt buộc validate `min ≤ max` ngay trên controller, trả `400 invalid_*_range`.
+  - Lý do: silent empty result làm UX rối (user không biết là filter sai vs data thật sự rỗng).
+  - Đã có pattern cũ: `BillsController.GetList` validate `from ≤ to`. ProductsController phải đối xứng.
+
+## 8. Known limitations giữ nguyên trong scope demo
+
+- `EF.Functions.ILike(name, "%{q}%")` không escape `%`, `_`, `\` — search literal chứa các ký tự này sẽ ra kết quả bất ngờ. Acceptable cho demo (admin tìm tên sản phẩm thực, không phải user-facing). Nếu mở rộng ra ngoài demo → escape metachar trước khi truyền vào ILike.
+- Không có optimistic concurrency (rowversion/etag) trên `PUT /api/products/{id}` — last writer wins. Acceptable cho admin demo (1 admin user).
+- `UnitPriceVnd` chỉ check `> 0`, không có hard upper bound. Acceptable cho demo; nếu prod cần cap để chặn overflow ở phép nhân `qty × price`.
+
+## 9. Quy ước test pollution
+
+- Test 409 (`DeleteProduct_WhenReferencedByBill_Returns409`) tạo `Buyer + Product + Bill Pending` không thể cleanup qua API hiện có (không có DELETE bill endpoint).
+- Trade-off chấp nhận: mỗi test run pile thêm vài rows test data với GUID prefix duy nhất, không ảnh hưởng test khác (filter scope theo prefix).
+- Nếu muốn cleanup hoàn toàn: hoặc thêm dev-only DELETE bill endpoint, hoặc inject `RevenueDbContext` vào test fixture để xoá trực tiếp. Cả hai đều ngoài scope demo.
+
+## 10. Quy ước commit cho demo
 
 - Plain commit, không trailer, không HEREDOC fancy.
 - Tách commit **code** và commit **docs** riêng biệt để bước cherry-pick về main không lẫn code feature.

@@ -16,7 +16,7 @@
   - 404 `ApiError(code="product_not_found", message)` nếu không.
 - [ ] **D1-B3.** `POST /api/products`:
   - Body `CreateProductRequest { Name, UnitPriceVnd }`.
-  - Validation tập trung trong helper `ValidateProductPayload`: trim Name, không rỗng, ≤ 200 ký tự; `UnitPriceVnd > 0`.
+  - Validation tập trung trong helper `ValidateProductPayload`: trim Name, không rỗng, ≤ 160 ký tự (khớp DB constraint); `UnitPriceVnd > 0`.
   - 201 + body `ProductListItemDto`, header `Location: /api/products/{id}`.
   - 400 `invalid_payload` với message field cụ thể.
 - [ ] **D1-B4.** `PUT /api/products/{id}`:
@@ -44,7 +44,7 @@
 - [ ] **D2-T2.** Test `CreateProduct_HappyPath_Returns201WithBody`.
 - [ ] **D2-T3.** Test `CreateProduct_EmptyName_Returns400`.
 - [ ] **D2-T4.** Test `CreateProduct_PriceZeroOrNegative_Returns400`.
-- [ ] **D2-T5.** Test `CreateProduct_NameOver200Chars_Returns400`.
+- [ ] **D2-T5.** Test `CreateProduct_NameOver160Chars_Returns400`.
 - [ ] **D2-T6.** Test `UpdateProduct_HappyPath_Returns200`.
 - [ ] **D2-T7.** Test `UpdateProduct_NotFound_Returns404`.
 - [ ] **D2-T8.** Test `DeleteProduct_HappyPath_Returns204`.

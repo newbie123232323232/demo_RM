@@ -53,8 +53,8 @@
 ### 2.3 `POST /api/products` (mới)
 - Body: `{ "name": string, "unitPriceVnd": long }`.
 - Validation:
-  - `name`: trim, sau trim không rỗng, độ dài ≤ 200 ký tự.
-  - `unitPriceVnd`: số nguyên dương `> 0`.
+  - `name`: trim, sau trim không rỗng, độ dài ≤ **160 ký tự** (khớp `Product.Name HasMaxLength(160)` ở DB schema để tránh fail ở DB layer).
+  - `unitPriceVnd`: số nguyên dương `> 0` (DB chỉ require `>= 0`, controller siết thêm `> 0` theo BR demo).
 - 201 + body `ProductListItemDto` (kèm `Location: /api/products/{id}` header).
 - 400 `invalid_payload` nếu fail validation, message chỉ rõ field nào sai.
 
@@ -68,7 +68,8 @@
 ### 2.5 `DELETE /api/products/{id}` (mới)
 - 204 nếu xoá thành công.
 - 404 `product_not_found` nếu id không tồn tại.
-- 409 `conflict_product_in_use` nếu product đang được tham chiếu trong bất kỳ `BillLine` nào (kể cả bill Pending lẫn Completed). Message gợi ý: "Sản phẩm đang được dùng trong bill, không thể xoá."
+- 409 `conflict_product_in_use` nếu product đang được tham chiếu trong bất kỳ `BillLine` nào (kể cả bill Pending lẫn Completed). Message: "Sản phẩm đang được dùng trong bill, không thể xoá."
+- **Defense-in-depth:** ngoài application check `BillLines.Any(x => x.ProductId == id)`, schema có FK `BillLines.ProductId → Products.Id ON DELETE RESTRICT` (migration `DemoProductFkOnBillLine`) để DB tự reject orphan delete trong race condition giữa check và save. Lúc đó controller catch `DbUpdateException` và map về cùng 409 contract.
 
 ### 2.6 Error contract chung
 - Format thống nhất `ApiError(code, message)` (giống các controller hiện hữu).
@@ -124,9 +125,10 @@
 | Tình huống | HTTP | Code | UI hiển thị |
 |---|---|---|---|
 | Tạo/sửa với name rỗng (sau trim) | 400 | `invalid_payload` | "Tên sản phẩm không được để trống." |
-| Tạo/sửa với name > 200 ký tự | 400 | `invalid_payload` | "Tên sản phẩm tối đa 200 ký tự." |
+| Tạo/sửa với name > 160 ký tự | 400 | `invalid_payload` | "Tên sản phẩm tối đa 160 ký tự." |
 | Tạo/sửa với unitPriceVnd ≤ 0 | 400 | `invalid_payload` | "Đơn giá phải > 0 VND." |
 | Sửa/xoá id không tồn tại | 404 | `product_not_found` | "Sản phẩm không tồn tại hoặc đã bị xoá." |
+| Lọc list với `priceMin > priceMax` | 400 | `invalid_price_range` | "priceMin phải nhỏ hơn hoặc bằng priceMax." |
 | Xoá product đang dùng trong bill | 409 | `conflict_product_in_use` | "Sản phẩm đang được dùng trong bill, không thể xoá." |
 | Timeout > 10s | n/a | TimeoutError client | "Request timeout (>10s). Kiểm tra API/DB hoặc kết nối mạng." |
 
