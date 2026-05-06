@@ -1,0 +1,151 @@
+.bill-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.page-header {
+  margin-bottom: 4px;
+}
+.page-header h1 {
+  margin-bottom: 6px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.section-head h3 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.form-action {
+  display: flex;
+  align-items: end;
+}
+
+.label-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.01em;
+}
+
+.qty-field {
+  max-width: 160px;
+}
+
+.vip {
+  margin: 12px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-muted);
+}
+.table-scroll table {
+  margin: 0;
+}
+
+.col-actions {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.subtotal {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+}
+.subtotal strong {
+  font-size: 16px;
+  color: var(--color-primary-strong);
+}
+
+/* Pending bills card */
+.pending-card {
+  border-color: var(--color-warning-border);
+  background: linear-gradient(180deg, var(--color-warning-soft), var(--color-surface));
+}
+
+/* Realtime preview card */
+.preview-card {
+  background: linear-gradient(180deg, var(--color-primary-soft), var(--color-surface));
+  border-color: var(--color-primary-soft-border);
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 24px;
+}
+
+.preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--color-border-muted);
+}
+.preview-row:last-child {
+  border-bottom: none;
+}
+.preview-payable {
+  background: var(--color-surface);
+  border: 1px solid var(--color-primary-soft-border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-top: 4px;
+}
+.preview-payable strong {
+  color: var(--color-primary-strong);
+  font-size: 16px;
+}
+
+/* Action card */
+.action-card {
+  background: var(--color-surface);
+}
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}

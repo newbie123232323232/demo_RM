@@ -1,0 +1,268 @@
+<section class="page revenue-page">
+  <header class="page-header">
+    <h1>Quản lý doanh thu</h1>
+    <p class="hint">Lịch sử bill + biểu đồ doanh thu, đối chiếu list/csv/chart, xuất báo cáo non-tech.</p>
+  </header>
+
+  <p *ngIf="loading" class="hint">Đang tải dữ liệu...</p>
+  <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+
+  <div class="card filters-card">
+    <div class="section-head">
+      <h3>Bộ lọc lịch sử bill</h3>
+    </div>
+    <div class="filters">
+      <label>
+        <span class="label-text">Buyer</span>
+        <select [(ngModel)]="selectedBuyerId" (ngModelChange)="onFilterChanged()">
+          <option [ngValue]="null">Tất cả buyer</option>
+          <option *ngFor="let buyer of buyers" [ngValue]="buyer.id">
+            {{ buyer.name }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        <span class="label-text">Trạng thái</span>
+        <select [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChanged()">
+          <option value="">Tất cả</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+        </select>
+      </label>
+
+      <label>
+        <span class="label-text">Từ ngày (PendingAt)</span>
+        <input type="date" [(ngModel)]="fromDate" (ngModelChange)="onFilterChanged()" />
+      </label>
+
+      <label>
+        <span class="label-text">Đến ngày (PendingAt)</span>
+        <input type="date" [(ngModel)]="toDate" (ngModelChange)="onFilterChanged()" />
+      </label>
+
+      <label class="range-field">
+        <span class="label-text">Payable max: <strong>{{ payableMaxVnd | number }}</strong> VND</span>
+        <input
+          type="range"
+          min="0"
+          max="100000000"
+          step="100000"
+          [(ngModel)]="payableMaxVnd"
+          (ngModelChange)="onFilterChanged()" />
+      </label>
+    </div>
+
+    <div class="filters-bottom">
+      <div class="products">
+        <span class="label-text">Lọc product (AND):</span>
+        <button type="button" (click)="openProductPicker()">Chọn product</button>
+        <span class="product-selected-chip">{{ selectedProductsLabel }}</span>
+      </div>
+
+      <div class="filters-actions">
+        <button type="button" (click)="downloadCsv()">Tải CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="product-picker-backdrop" *ngIf="isProductPickerOpen" (click)="cancelProductPicker()">
+    <div
+      #productPickerDialog
+      class="product-picker-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="product-picker-title"
+      tabindex="-1"
+      (keydown.escape)="cancelProductPicker()"
+      (keydown)="onPickerKeydown($event)"
+      (click)="$event.stopPropagation()">
+      <div class="product-picker-header">
+        <h3 id="product-picker-title">Chọn product để lọc (AND)</h3>
+        <button type="button" class="btn-ghost btn-sm" (click)="cancelProductPicker()" aria-label="Đóng">×</button>
+      </div>
+      <p class="hint">Chọn các product cần lọc. Bộ lọc chỉ áp dụng khi bấm <strong>Xác nhận</strong>.</p>
+      <div class="product-picker-list">
+        <label *ngFor="let product of products" class="product-check">
+          <input
+            type="checkbox"
+            [checked]="draftProductIds.includes(product.id)"
+            (change)="toggleProduct(product.id, $any($event.target).checked)" />
+          <span>{{ product.name }}</span>
+        </label>
+      </div>
+      <div class="product-picker-actions">
+        <button type="button" class="btn-ghost" (click)="clearDraftProducts()">Bỏ chọn tất cả</button>
+        <span class="picker-spacer"></span>
+        <button type="button" (click)="cancelProductPicker()">Hủy</button>
+        <button type="button" class="btn-primary" (click)="applyProductPicker()">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card history-card" *ngIf="bills.length > 0">
+    <div class="section-head">
+      <h3>Lịch sử bill</h3>
+      <span class="tag" *ngIf="totalCount > 0">{{ totalCount }} bill · trang {{ currentPage }}/{{ totalPages }}</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>BillId</th>
+            <th>Buyer</th>
+            <th>Status</th>
+            <th class="col-num">Subtotal</th>
+            <th class="col-num">Voucher</th>
+            <th class="col-num">VipUsed</th>
+            <th class="col-num">VipDiscount</th>
+            <th class="col-num">Payable</th>
+            <th class="col-num">VipEarned</th>
+            <th>PendingAt</th>
+            <th>CompletedAt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let bill of bills">
+            <td>#{{ bill.billId }}</td>
+            <td>{{ bill.buyerId }}</td>
+            <td>
+              <span class="tag tag-warning" *ngIf="bill.status === 'Pending'">Pending</span>
+              <span class="tag tag-success" *ngIf="bill.status === 'Completed'">Completed</span>
+              <span class="tag" *ngIf="bill.status !== 'Pending' && bill.status !== 'Completed'">{{ bill.status }}</span>
+            </td>
+            <td class="col-num">{{ bill.subtotal | number }}</td>
+            <td class="col-num">{{ bill.voucherThuongAmount | number }}</td>
+            <td class="col-num">{{ bill.vipPointUsed }}</td>
+            <td class="col-num">{{ bill.vipDiscountVnd | number }}</td>
+            <td class="col-num"><strong>{{ bill.payable | number }}</strong></td>
+            <td class="col-num">{{ bill.vipPointEarned }}</td>
+            <td><span class="muted">{{ bill.pendingAtUtc | date:'dd/MM/yyyy HH:mm' }}</span></td>
+            <td>
+              <span class="muted" *ngIf="bill.completedAtUtc">{{ bill.completedAtUtc | date:'dd/MM/yyyy HH:mm' }}</span>
+              <span class="muted" *ngIf="!bill.completedAtUtc">—</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <button type="button" (click)="previousPage()" [disabled]="currentPage <= 1">‹ Trang trước</button>
+      <button type="button" (click)="nextPage()" [disabled]="currentPage >= totalPages">Trang sau ›</button>
+      <label class="page-size-inline">
+        <span>Bill/trang</span>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChanged()">
+          <option [ngValue]="5">5</option>
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="15">15</option>
+          <option [ngValue]="20">20</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="card empty-card" *ngIf="!loading && bills.length === 0">
+    <p class="hint">Không có bill phù hợp với bộ lọc hiện tại.</p>
+  </div>
+
+  <div class="card chart-card">
+    <div class="section-head">
+      <h3>Biểu đồ doanh thu</h3>
+      <span class="tag tag-info" *ngIf="chartLoading">đang tải</span>
+    </div>
+    <p *ngIf="chartErrorMessage" class="error">{{ chartErrorMessage }}</p>
+
+    <div class="filters">
+      <label>
+        <span class="label-text">Chế độ</span>
+        <select [(ngModel)]="revenueMode" (ngModelChange)="onChartFilterChanged()">
+          <option value="total">Tổng doanh thu</option>
+          <option value="byBuyer">Theo buyer</option>
+          <option value="byProduct">Theo product</option>
+          <option value="byBuyerAndProduct">Theo buyer + product</option>
+        </select>
+      </label>
+
+      <label>
+        <span class="label-text">Bucket</span>
+        <select [(ngModel)]="revenueBucket" (ngModelChange)="onChartFilterChanged()">
+          <option value="day">Ngày</option>
+          <option value="week">Tuần</option>
+          <option value="month">Tháng</option>
+        </select>
+      </label>
+
+      <label *ngIf="revenueMode === 'byBuyer' || revenueMode === 'byBuyerAndProduct'">
+        <span class="label-text">Buyer (chart)</span>
+        <select [(ngModel)]="chartBuyerId" (ngModelChange)="onChartFilterChanged()">
+          <option [ngValue]="null">Chọn buyer</option>
+          <option *ngFor="let buyer of buyers" [ngValue]="buyer.id">
+            {{ buyer.name }}
+          </option>
+        </select>
+      </label>
+
+      <label *ngIf="revenueMode === 'byProduct' || revenueMode === 'byBuyerAndProduct'">
+        <span class="label-text">Product (chart)</span>
+        <select [(ngModel)]="chartProductId" (ngModelChange)="onChartFilterChanged()">
+          <option [ngValue]="null">Chọn product</option>
+          <option *ngFor="let product of products" [ngValue]="product.id">
+            {{ product.name }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        <span class="label-text">Từ ngày (CompletedAt)</span>
+        <input type="date" [(ngModel)]="chartFromDate" (ngModelChange)="onChartFilterChanged()" />
+      </label>
+
+      <label>
+        <span class="label-text">Đến ngày (CompletedAt)</span>
+        <input type="date" [(ngModel)]="chartToDate" (ngModelChange)="onChartFilterChanged()" />
+      </label>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas
+        #revenueChartCanvas
+        width="920"
+        height="340"
+        role="img"
+        [attr.aria-label]="chartAriaLabel"
+        (mousemove)="onChartMouseMove($event)"
+        (mouseleave)="onChartMouseLeave()"></canvas>
+      <div
+        *ngIf="hoverPoint"
+        class="chart-tooltip"
+        [style.left.px]="hoverPoint.x + 10"
+        [style.top.px]="hoverPoint.y - 10">
+        <div class="chart-tooltip-label">{{ hoverPoint.label }}</div>
+        <div class="chart-tooltip-value">{{ hoverPoint.value | number }} VND</div>
+      </div>
+    </div>
+
+    <div class="chart-actions">
+      <button type="button" (click)="exportChartAsPng()" [disabled]="!hasChartSeries">
+        Xuất ảnh PNG
+      </button>
+      <button type="button" (click)="downloadNontechXlsx()">
+        Báo cáo non-tech (.xlsx)
+      </button>
+      <button type="button" (click)="reconcileChartWithListAndCsv()">
+        Đối chiếu chart/list/csv
+      </button>
+    </div>
+
+    <p class="hint chart-hint">
+      <strong>Mặc định</strong> (để trống Từ/Đến): hiển thị 10 ngày / tuần / tháng gần nhất theo lịch Việt Nam.
+      <br />
+      <strong>Zoom</strong>: giữ <kbd>Ctrl</kbd> + lăn chuột — lên để phóng to vùng con trỏ, xuống để thu nhỏ; không thu nhỏ vượt phạm vi dữ liệu đang tải.
+    </p>
+    <p class="hint">
+      Báo cáo non-tech tính theo <em>CompletedAt</em> với cùng filter ngày/buyer/product/payable max của khu vực biểu đồ.
+    </p>
+    <p *ngIf="compareMessage" class="ok">{{ compareMessage }}</p>
+    <p *ngIf="compareErrorMessage" class="error">{{ compareErrorMessage }}</p>
+  </div>
+</section>

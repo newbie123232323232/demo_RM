@@ -1,0 +1,230 @@
+<section class="page bill-page">
+  <header class="page-header">
+    <h1>Lập bill (fake buyer)</h1>
+    <p class="hint">
+      Chọn buyer, thêm dòng Draft, thiết lập voucher/VipPoint rồi xác nhận và hoàn tất bill.
+    </p>
+  </header>
+
+  <p *ngIf="loading" class="hint">Đang tải buyers/products...</p>
+  <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+  <p *ngIf="actionInfoMessage" class="info">{{ actionInfoMessage }}</p>
+  <p *ngIf="actionErrorMessage" class="error">{{ actionErrorMessage }}</p>
+
+  <div class="card pending-card" *ngIf="pendingBills.length > 0">
+    <div class="section-head">
+      <h3>Bill Pending chưa Complete</h3>
+      <span class="tag tag-warning">{{ pendingBills.length }} đang chờ</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>BillId</th>
+            <th>BuyerId</th>
+            <th class="col-num">Payable (VND)</th>
+            <th class="col-num">VipUsed</th>
+            <th>PendingAt</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let bill of pendingBills">
+            <td>#{{ bill.billId }}</td>
+            <td>{{ bill.buyerId }}</td>
+            <td class="col-num">{{ bill.payable | number }}</td>
+            <td class="col-num">{{ bill.vipPointUsed }}</td>
+            <td><span class="muted">{{ bill.pendingAtUtc | date:'dd/MM/yyyy HH:mm' }}</span></td>
+            <td class="col-actions">
+              <button type="button" class="btn-sm" (click)="resumePendingBill(bill.billId)">Tiếp tục</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-head">
+      <h3><span class="step-badge">1</span> Buyer</h3>
+    </div>
+    <div class="form-grid">
+      <label>
+        <span class="label-text">Chọn buyer</span>
+        <select
+          [ngModel]="selectedBuyerId"
+          (ngModelChange)="onBuyerChanged($event ? +$event : null)">
+          <option [ngValue]="null">-- Chọn buyer --</option>
+          <option *ngFor="let buyer of buyers" [ngValue]="buyer.id">
+            {{ buyer.name }} (VipPoint: {{ buyer.vipPoint }})
+          </option>
+        </select>
+      </label>
+    </div>
+
+    <p class="vip" *ngIf="selectedBuyer">
+      VipPoint khả dụng:
+      <span class="tag tag-info">{{ selectedBuyer.vipPoint }} điểm</span>
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="section-head">
+      <h3><span class="step-badge">2</span> Thêm sản phẩm vào Draft</h3>
+    </div>
+    <div class="form-grid">
+      <label>
+        <span class="label-text">Product</span>
+        <select [(ngModel)]="selectedProductId">
+          <option [ngValue]="null">-- Chọn product --</option>
+          <option *ngFor="let product of products" [ngValue]="product.id">
+            {{ product.name }} - {{ product.unitPriceVnd | number }} VND
+          </option>
+        </select>
+      </label>
+
+      <label class="qty-field">
+        <span class="label-text">Số lượng</span>
+        <input type="number" min="1" [(ngModel)]="selectedQty" />
+      </label>
+
+      <div class="form-action">
+        <button type="button" class="btn-primary" (click)="addDraftLine()">Thêm vào Draft</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" *ngIf="selectedBuyer">
+    <div class="section-head">
+      <h3><span class="step-badge">3</span> Voucher &amp; VipPoint</h3>
+    </div>
+    <div class="form-grid">
+      <label>
+        <span class="label-text">Voucher thưởng</span>
+        <select [(ngModel)]="voucherType" (ngModelChange)="onPricingInputChanged()">
+          <option value="none">Không dùng voucher</option>
+          <option value="percent">Giảm theo %</option>
+          <option value="vnd">Giảm VND cố định</option>
+        </select>
+      </label>
+
+      <label>
+        <span class="label-text">Giá trị voucher</span>
+        <input type="number" min="0" [(ngModel)]="voucherValue" (ngModelChange)="onPricingInputChanged()" />
+      </label>
+
+      <label>
+        <span class="label-text">VipPoint dùng (0 hoặc &ge; 5)</span>
+        <input type="number" min="0" [(ngModel)]="vipPointsUsed" (ngModelChange)="onPricingInputChanged()" />
+      </label>
+    </div>
+  </div>
+
+  <div class="card" *ngIf="draftLines.length > 0">
+    <div class="section-head">
+      <h3><span class="step-badge">4</span> Draft hiện tại</h3>
+      <span class="tag">{{ draftLines.length }} dòng</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th class="col-num">Đơn giá</th>
+            <th class="col-num">SL</th>
+            <th class="col-num">Thành tiền</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let line of draftLines">
+            <td>{{ line.productName }}</td>
+            <td class="col-num">{{ line.unitPriceVnd | number }}</td>
+            <td class="col-num">{{ line.qty }}</td>
+            <td class="col-num"><strong>{{ line.lineTotalVnd | number }}</strong></td>
+            <td class="col-actions">
+              <button type="button" class="btn-sm btn-danger" (click)="removeLine(line.productId)">Xóa</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="subtotal">
+      <span>Subtotal:</span>
+      <strong>{{ subtotalVnd | number }} VND</strong>
+    </p>
+  </div>
+
+  <div class="card preview-card" *ngIf="previewResult">
+    <div class="section-head">
+      <h3>Realtime preview</h3>
+      <span class="tag tag-info">tự cập nhật ~300ms</span>
+    </div>
+    <div class="preview-grid">
+      <div class="preview-row">
+        <span class="muted">Subtotal</span>
+        <strong>{{ previewResult.subtotal | number }} VND</strong>
+      </div>
+      <div class="preview-row">
+        <span class="muted">Giảm voucher</span>
+        <strong>{{ previewResult.voucherThuongAmount | number }} VND</strong>
+      </div>
+      <div class="preview-row">
+        <span class="muted">B (trước Vip)</span>
+        <strong>{{ previewResult.baseBeforeVip | number }} VND</strong>
+      </div>
+      <div class="preview-row">
+        <span class="muted">Giảm VipPoint</span>
+        <strong>{{ previewResult.vipDiscount | number }} VND</strong>
+      </div>
+      <div class="preview-row preview-payable">
+        <span>Payable</span>
+        <strong>{{ previewResult.payable | number }} VND</strong>
+      </div>
+      <div class="preview-row">
+        <span class="muted">Điểm dự kiến nhận sau Complete</span>
+        <strong>+{{ previewResult.expectedVipPointsEarnedIfCompleted }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <p *ngIf="previewErrorMessage" class="error">{{ previewErrorMessage }}</p>
+
+  <div class="card action-card">
+    <div class="section-head">
+      <h3><span class="step-badge">5</span> Hoàn tất bill</h3>
+      <ng-container [ngSwitch]="currentBill?.status ?? 'Draft'">
+        <span class="tag" *ngSwitchCase="'Draft'">Draft (chưa lưu)</span>
+        <span class="tag tag-warning" *ngSwitchCase="'Pending'">Pending #{{ currentBill?.billId }}</span>
+        <span class="tag tag-success" *ngSwitchCase="'Completed'">Completed #{{ currentBill?.billId }}</span>
+        <span class="tag" *ngSwitchDefault>{{ currentBill?.status }}</span>
+      </ng-container>
+    </div>
+    <p class="hint" *ngIf="!currentBill">Bill chưa được lưu. Bấm <strong>Xác nhận thanh toán</strong> để tạo Pending.</p>
+    <p class="hint" *ngIf="currentBill?.status === 'Pending'">Bill #{{ currentBill?.billId }} đang chờ Complete. Có thể cập nhật draft trước khi Complete.</p>
+    <p class="hint" *ngIf="currentBill?.status === 'Completed'">Bill #{{ currentBill?.billId }} đã hoàn tất, VipPoint đã được trừ/cộng theo công thức.</p>
+    <div class="action-row">
+      <button
+        type="button"
+        class="btn-primary"
+        [disabled]="!!currentBill"
+        (click)="confirmPayment()">
+        Xác nhận thanh toán
+      </button>
+      <button
+        type="button"
+        [disabled]="!currentBill || currentBill.status !== 'Pending'"
+        (click)="updatePendingBill()">
+        Cập nhật Pending
+      </button>
+      <button
+        type="button"
+        class="btn-primary"
+        [disabled]="!currentBill || currentBill.status === 'Completed'"
+        (click)="completeBill()">
+        Complete
+      </button>
+    </div>
+  </div>
+</section>

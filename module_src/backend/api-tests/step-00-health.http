@@ -1,0 +1,11 @@
+### Step 0 — Health & root (REST Client)
+@baseUrl = http://localhost:5093
+
+### GET health (JSON)
+GET {{baseUrl}}/health
+
+### GET root (plain text)
+GET {{baseUrl}}/
+
+### Template sample (JSON array)
+GET {{baseUrl}}/WeatherForecast

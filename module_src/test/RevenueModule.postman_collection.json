@@ -1,0 +1,370 @@
+{
+  "info": {
+    "name": "RevenueModule API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Shared Postman collection for the whole RevenueModule API."
+  },
+  "item": [
+    {
+      "name": "Step 00 - Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "GET /",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 01 - Master Data",
+      "item": [
+        {
+          "name": "GET /api/buyers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/buyers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "buyers"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/buyers/2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/buyers/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "buyers", "2"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/buyers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Buyer Fake\",\n  \"initialVipPoint\": 6\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/buyers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "buyers"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 02 - Preview Pipeline",
+      "item": [
+        {
+          "name": "POST /api/bills/preview",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"buyerId\": 2,\n  \"lines\": [\n    {\n      \"productId\": 1,\n      \"qty\": 2,\n      \"unitPriceVnd\": 45000\n    },\n    {\n      \"productId\": 2,\n      \"qty\": 1,\n      \"unitPriceVnd\": 320000\n    }\n  ],\n  \"voucherType\": \"percent\",\n  \"voucherValue\": 5,\n  \"vipPointsUsed\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bills/preview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills", "preview"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 03 - Confirm Complete",
+      "item": [
+        {
+          "name": "POST /api/bills/confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"buyerId\": 3,\n  \"lines\": [\n    {\n      \"productId\": 1,\n      \"qty\": 1,\n      \"unitPriceVnd\": 45000\n    }\n  ],\n  \"voucherType\": \"none\",\n  \"voucherValue\": 0,\n  \"vipPointsUsed\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bills/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "POST /api/bills/{id}/complete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bills/{{billId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills", "{{billId}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "PUT /api/bills/{id}/pending",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"buyerId\": 3,\n  \"lines\": [\n    {\n      \"productId\": 1,\n      \"qty\": 2,\n      \"unitPriceVnd\": 45000\n    }\n  ],\n  \"voucherType\": \"percent\",\n  \"voucherValue\": 5,\n  \"vipPointsUsed\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bills/{{billId}}/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills", "{{billId}}", "pending"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/bills/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bills/{{billId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills", "{{billId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 04 - Revenue List and CSV",
+      "item": [
+        {
+          "name": "GET /api/bills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bills",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills"]
+            }
+          }
+        },
+        {
+          "name": "GET /api/bills (filtered)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bills?status=completed&payableMaxVnd=100000000&productIds=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills"],
+              "query": [
+                { "key": "status", "value": "completed" },
+                { "key": "payableMaxVnd", "value": "100000000" },
+                { "key": "productIds", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/bills/export.csv",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bills/export.csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills", "export.csv"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Step 05 - Revenue Series",
+      "item": [
+        {
+          "name": "GET /api/reports/revenue-series (total/day)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/revenue-series?mode=total&bucket=day&payableMaxVnd=100000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "revenue-series"],
+              "query": [
+                { "key": "mode", "value": "total" },
+                { "key": "bucket", "value": "day" },
+                { "key": "payableMaxVnd", "value": "100000000" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/reports/revenue-series (byProduct/week)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/revenue-series?mode=byProduct&bucket=week&productId=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "revenue-series"],
+              "query": [
+                { "key": "mode", "value": "byProduct" },
+                { "key": "bucket", "value": "week" },
+                { "key": "productId", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/bills (completed + timeField=completed)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bills?status=completed&timeField=completed&payableMaxVnd=100000000&page=1&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills"],
+              "query": [
+                { "key": "status", "value": "completed" },
+                { "key": "timeField", "value": "completed" },
+                { "key": "payableMaxVnd", "value": "100000000" },
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/bills/export.csv (completed + timeField=completed)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bills/export.csv?status=completed&timeField=completed&payableMaxVnd=100000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bills", "export.csv"],
+              "query": [
+                { "key": "status", "value": "completed" },
+                { "key": "timeField", "value": "completed" },
+                { "key": "payableMaxVnd", "value": "100000000" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/reports/export-nontech.xlsx (day, payableMax 100M)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/export-nontech.xlsx?bucket=day&payableMaxVnd=100000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "export-nontech.xlsx"],
+              "query": [
+                { "key": "bucket", "value": "day" },
+                { "key": "payableMaxVnd", "value": "100000000" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /api/reports/export-nontech.xlsx (week, by buyer 2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/export-nontech.xlsx?bucket=week&buyerId=2&payableMaxVnd=100000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "export-nontech.xlsx"],
+              "query": [
+                { "key": "bucket", "value": "week" },
+                { "key": "buyerId", "value": "2" },
+                { "key": "payableMaxVnd", "value": "100000000" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5093"
+    },
+    {
+      "key": "billId",
+      "value": "1"
+    }
+  ]
+}

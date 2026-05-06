@@ -1,0 +1,28 @@
+<div class="app-shell">
+  <header class="top-nav">
+    <div class="top-nav-inner">
+      <a class="brand" routerLink="/lab/bill">
+        <span class="brand-mark">RM</span>
+        <span class="brand-text">
+          <span class="brand-title">Module Doanh thu</span>
+          <span class="brand-sub">VipPoint &middot; Lab</span>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="Điều hướng chính">
+        <a
+          routerLink="/lab/bill"
+          routerLinkActive="active"
+          #billLink="routerLinkActive"
+          [attr.aria-current]="billLink.isActive ? 'page' : null">Lập bill</a>
+        <a
+          routerLink="/lab/revenue"
+          routerLinkActive="active"
+          #revenueLink="routerLinkActive"
+          [attr.aria-current]="revenueLink.isActive ? 'page' : null">Quản lý doanh thu</a>
+      </nav>
+    </div>
+  </header>
+  <main class="main">
+    <router-outlet />
+  </main>
+</div>
