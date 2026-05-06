@@ -101,7 +101,7 @@ public sealed class ProductsController(RevenueDbContext dbContext) : ControllerB
             .SingleOrDefaultAsync(cancellationToken);
         if (product is null)
         {
-            return NotFound(new ApiError("product_not_found", "Product not found."));
+            return NotFound(new ApiError("product_not_found", "Sản phẩm không tồn tại hoặc đã bị xoá."));
         }
 
         return Ok(product);
@@ -141,7 +141,7 @@ public sealed class ProductsController(RevenueDbContext dbContext) : ControllerB
         var product = await dbContext.Products.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (product is null)
         {
-            return NotFound(new ApiError("product_not_found", "Product not found."));
+            return NotFound(new ApiError("product_not_found", "Sản phẩm không tồn tại hoặc đã bị xoá."));
         }
 
         product.Name = request.Name!.Trim();
@@ -157,7 +157,7 @@ public sealed class ProductsController(RevenueDbContext dbContext) : ControllerB
         var product = await dbContext.Products.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (product is null)
         {
-            return NotFound(new ApiError("product_not_found", "Product not found."));
+            return NotFound(new ApiError("product_not_found", "Sản phẩm không tồn tại hoặc đã bị xoá."));
         }
 
         var inUse = await dbContext.BillLines
@@ -190,7 +190,7 @@ public sealed class ProductsController(RevenueDbContext dbContext) : ControllerB
     {
         if (request is null)
         {
-            return BadRequest(new ApiError("invalid_payload", "Request body is required."));
+            return BadRequest(new ApiError("invalid_payload", "Thiếu nội dung request."));
         }
 
         var name = request.Name?.Trim();

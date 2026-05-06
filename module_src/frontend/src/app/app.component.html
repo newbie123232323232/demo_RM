@@ -15,6 +15,11 @@
           #billLink="routerLinkActive"
           [attr.aria-current]="billLink.isActive ? 'page' : null">Lập bill</a>
         <a
+          routerLink="/lab/products"
+          routerLinkActive="active"
+          #productsLink="routerLinkActive"
+          [attr.aria-current]="productsLink.isActive ? 'page' : null">Sản phẩm</a>
+        <a
           routerLink="/lab/revenue"
           routerLinkActive="active"
           #revenueLink="routerLinkActive"
