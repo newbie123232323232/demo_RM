@@ -12,6 +12,74 @@
 
 ---
 
+### 2026-05-06 — Council review backend D2 (replay): không critical + bổ sung assert `Location`
+
+- **Issue:** Rà soát adversarial sau khi đã có FK + integration tests. Phát hiện lỗ hổng nhỏ so với BR: test happy-path `POST /api/products` chưa assert header `Location` trỏ tới `/api/products/{id}` (BR yêu cầu 201 kèm `Location`).
+- **Tác động:** Drift giữa contract BR và “proof” trong test suite; khó phát hiện nếu ai đổi `CreatedAtAction` sau này.
+- **Đã xử lý:** Cập nhật `CreateProduct_HappyPath_Returns201WithBody` assert `response.Headers.Location` không null và path chứa `/api/products/{id}`. `dotnet test` full suite pass.
+- **Quy ước tiếp theo:** Council backend sau D2 luôn đối chiếu BR mục status/header (201 + `Location`, 204 delete) chứ không chỉ body JSON.
+
+**Findings khác (không chặn ship demo):**
+
+- **MAJOR (chấp nhận risk):** `catch (DbUpdateException)` trên delete có thể gộp lỗi DB không phải FK vào `409 conflict_product_in_use`. Trong demo chấp nhận; nếu production cần tách, map theo `SqlState` / inner exception cụ thể.
+- **MINOR:** `ILike` không escape `%`/`_` (đã ghi trong `Lessonlearn` known limitations).
+
+### 2026-05-07 — Drift cập nhật checklist D7 (test/build đã chạy nhưng chưa tick)
+
+- **Issue:** Sau khi hoàn thành D5/D6 implementation, `dotnet test` và `ng build` đã chạy pass nhưng `devplan_checklist.md` còn để trạng thái `[ ]` ở D7.
+- **Tác động:** Gây lệch giữa bằng chứng runtime và trạng thái tiến độ; người đọc sau dễ hiểu nhầm chưa verify.
+- **Đã xử lý:** Thêm rule vận hành cập nhật tiến độ ngay đầu `devplan_checklist.md` và tick lại các mục D7 đã có bằng chứng (`dotnet test`, `ng build`, lint).
+- **Quy ước tiếp theo:** Mỗi khi có output pass/fail cho checkpoint, cập nhật checklist trong cùng lượt; nếu phát hiện lệch phải log issue trước khi chuyển step.
+
+### 2026-05-07 — `ng serve` bật mới bị chặn do cổng 4200 đang dùng (interactive prompt)
+
+- **Issue:** Chạy `npx ng serve --host 127.0.0.1 --port 4200` trong shell tự động bị hỏi tương tác `Would you like to use a different port?` và thoát do cổng đã có process.
+- **Tác động:** Luồng test tự động bị ngắt nếu command rơi vào prompt tương tác.
+- **Đã xử lý:** Không spawn thêm server; dùng instance đang chạy sẵn để smoke HTTP `/lab/products`, `/lab/bill`, `/lab/revenue` đều trả 200.
+- **Quy ước tiếp theo:** Trước khi bật `ng serve` trong automation, kiểm tra cổng 4200; nếu đã có server thì tái sử dụng, tránh lệnh có prompt tương tác.
+
+### 2026-05-07 — Council frontend D6 replay: major đã xử lý, gate pass
+
+- **Issue:** Council replay phát hiện 2 major ở implementation products page: (1) race stale response khi nhiều request list chạy chồng; (2) silent truncation giá thập phân.
+- **Tác động:** Có thể hiển thị dữ liệu cũ khi user thao tác nhanh; dữ liệu giá có nguy cơ bị đổi ngầm.
+- **Đã xử lý:** Thêm `listRequestSeq` guard trong `loadList`, reject số thập phân ở input giá (upsert + filter), thêm a11y field mapping (`aria-invalid`/`aria-describedby`) và đồng bộ `maxlength=160`.
+- **Quy ước tiếp theo:** Các flow list có debounce/pagination phải có cơ chế chống stale response; số tiền VND luôn validate integer, không truncate ngầm.
+
+### 2026-05-07 — Council final docs: conflict policy + trạng thái gate chưa nhất quán
+
+- **Issue:** Rà soát final docs phát hiện 2 lệch chính: (1) BR ghi “không động `Planning_doc/`” trong khi Lessonlearn yêu cầu mirror policy; (2) trạng thái manual trong `Promt_History` không khớp checklist.
+- **Tác động:** Replay v2 có thể drift do không rõ nguồn chân lý tài liệu và trạng thái thật của step.
+- **Đã xử lý:** Sửa BR mục ràng buộc để cho phép ngoại lệ mirror tài liệu; chỉnh wording mốc 14 trong `Promt_History` về trạng thái manual pending; bổ sung checkpoint 3-kênh test backend vào checklist để evidence thống nhất.
+- **Quy ước tiếp theo:** Khi cập nhật rule mới ở lesson, đồng bộ ngay BR/checklist/prompt-history trong cùng phiên để tránh conflict liên file.
+
+### 2026-05-07 — Chứng từ Postman runner trong môi trường không GUI
+
+- **Issue:** Kênh 2 (Postman Runner) cần bằng chứng pass nhưng phiên làm việc không có GUI Postman.
+- **Tác động:** Nếu chỉ dựa mô tả tay, checkpoint “3 kênh test backend” thiếu chứng từ tự động.
+- **Đã xử lý:** Chạy `npx newman run` trực tiếp collection folder D2 Products với environment local; kết quả 6 requests, 10 assertions, 0 failed.
+- **Quy ước tiếp theo:** Khi không có Postman GUI, dùng `newman` để phát sinh chứng từ runner tương đương và ghi lại trong checklist/issues.
+
+### 2026-05-07 — Checklist ambiguity: task con không có ô tick gây hiểu nhầm trạng thái
+
+- **Issue:** Một số dòng mô tả task con (gạch đầu dòng dưới task cha) bị hiểu là task độc lập chưa tick, dù task cha đã `[x]`.
+- **Tác động:** Dễ tạo tranh luận “quên tick hay chưa làm”, làm chậm việc đóng step.
+- **Đã xử lý:** Thêm rule dependency trực tiếp trong `devplan_checklist.md`: không chuyển step khi còn `[ ]` trừ khi có ghi `Pending: phụ thuộc Step Dx - ...`; rà lại và annotate các task pending D2/D5/D6/D7.
+- **Quy ước tiếp theo:** Chỉ dòng có checkbox (`[ ]`/`[x]`) mới là đơn vị track tiến độ; dòng con không checkbox là acceptance criteria mô tả của task cha.
+
+### 2026-05-07 — Chuẩn hoá ký hiệu task vs tiêu chí trong checklist
+
+- **Issue:** Việc dùng cùng dấu `-` cho task và tiêu chí/spec dễ gây nhầm mức độ “chưa tick”.
+- **Tác động:** Người review có thể tưởng tiêu chí con là task độc lập chưa done.
+- **Đã xử lý:** Thêm rule format trong `devplan_checklist.md`: task dùng `-`, tiêu chí/spec/validation dùng `+`; chuẩn hoá các mục D1/D2/D4/D5/D9 theo rule.
+- **Quy ước tiếp theo:** Mọi checklist mới phải giữ phân biệt `-` (task) và `+` (criteria), tránh ambiguity khi audit tiến độ.
+
+### 2026-05-06 — D4: không mở trình duyệt — kiểm chứng thay bằng HTTP + `ng serve`
+
+- **Issue:** Không thể smoke manual UI qua browser trong phiên hiện tại.
+- **Tác động:** Gate “manual smoke D4” cần proxy có lệnh tái lập được.
+- **Đã xử lý:** Xác nhận `npx ng serve --host 127.0.0.1 --port 4200` build xong; `Invoke-WebRequest http://127.0.0.1:4200/lab/products` trả **200** và HTML shell có `app-root` + `main.js` (ứng dụng Angular client-render; không kỳ vọng thấy text “Sản phẩm” trong HTML tĩnh).
+- **Quy ước tiếp theo:** Nếu máy khác/trình duyệt khác không vào được `127.0.0.1:4200`, thử `--host 0.0.0.0` và kiểm tra firewall; CORS API đã allow `http://localhost:4200` và `http://127.0.0.1:4200`.
+
 ### 2026-05-06 — Council review backend D2: phát hiện FK gap + 4 fix
 
 - **Issue:** Adversarial review sau Step D2 phát hiện `BillLine.ProductId` không có FK constraint ở DB schema → race giữa `Any()` check và `SaveChanges()` có thể tạo orphan row, và DB không bảo vệ. Ngoài ra: 409 message tiếng Anh không khớp BR, thiếu validate `priceMin > priceMax`, và missing tests cho `name=null`, `pageSize > 100`, `priceMin > priceMax`.
@@ -95,6 +163,13 @@
 - **Tác động:** Tạo thêm thay đổi ngoài scope mong muốn của user, tăng độ ồn trong nhánh demo.
 - **Đã xử lý:** Xóa file `products.component.spec.ts`, revert `app.component.spec.ts` về trạng thái cũ, giữ lại duy nhất fix logic/runtime cần thiết cho UX.
 - **Quy ước tiếp theo:** Với flow demo-step hiện tại, mặc định không thêm frontend unit test mới nếu user không yêu cầu rõ; ưu tiên đúng contract test đã chốt trước đó.
+
+### 2026-05-06 — Drift quy trình khi đang chạy test: lệch khỏi protocol step-by-step
+
+- **Issue:** Trong phiên chạy theo tài liệu, có lúc thao tác đi tắt theo hướng lấy sẵn implementation thay vì bám execution protocol từ checklist đã regenerate.
+- **Tác động:** Dễ làm buổi chạy mất tính “thực thi theo step”, làm mờ ranh giới giữa plan phase và implementation phase.
+- **Đã xử lý:** Dừng ngay thao tác lệch, xác nhận lại trạng thái workspace, quay về luồng đúng: context-check -> regenerate checklist -> sync docs -> chỉ thực thi khi user yêu cầu rõ.
+- **Quy ước tiếp theo:** Khi đã vào flow test theo `demo_prompt.md`, mọi thao tác phải bám step hiện tại trong checklist; cấm shortcut ngoài step dù mục tiêu kỹ thuật có vẻ tương đương.
 
 ---
 

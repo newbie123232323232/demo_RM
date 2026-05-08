@@ -158,3 +158,37 @@
   3) checklist/docs được tick/sync.
 - **Cross-consumer smoke khi endpoint dùng chung thay đổi:** endpoint list/filter được nhiều màn dùng thì phải smoke tất cả màn phụ thuộc trước khi coi là done.
 - **Ưu tiên tín hiệu runtime thật hơn tín hiệu task shell:** task shell fail không đồng nghĩa service fail; xác nhận bằng health/data endpoint trước khi kết luận.
+
+## 18. Quy ước chế độ "test mù context" theo trigger chat
+
+- Trigger vào chế độ test: khi user nhắn đúng ý `"bắt đầu test"`.
+- Hành vi bắt buộc trong chế độ test:
+  - Đóng vai agent mới, chưa nắm toàn bộ context phần mới.
+  - Chỉ dùng context đọc được trực tiếp từ workspace/file hiện tại.
+  - Không viện dẫn lịch sử ngoài phạm vi task đang được user cung cấp.
+  - Không tự nhắc đến quy trình nội bộ, nhánh khác, hay các lần làm trước nếu user không yêu cầu trực tiếp.
+  - Làm việc theo protocol trong tài liệu hiện có, xác nhận từng step bằng bằng chứng runtime/test theo scope đã chốt.
+- Trigger thoát chế độ test: khi user nhắn đúng ý `"kết thúc test"` thì quay lại chế độ làm việc bình thường.
+- Mục tiêu: giữ trải nghiệm test thực tế, tránh nhiễu bởi meta-context và thông tin ngoài kịch bản hiện hành.
+
+## 19. Ba kênh test backend song song (bắt buộc cho mỗi step có API)
+
+Mỗi bước backend có endpoint/hành vi mới phải được xác nhận bằng **ba kênh chạy song song** (bổ sung cho nhau, không thay thế):
+
+| Kênh | Nội dung | Ai chạy / Ghi chú |
+|------|-----------|-------------------|
+| **1 — Script + automated trong repo** | `dotnet test` (integration/unit đã có) **và** script smoke theo step trong `module_src/backend/api-tests/` (ví dụ `step-d2-products-smoke.ps1`). Agent chạy trực tiếp trong môi trường workspace và **báo cáo lệnh + output** (pass/fail, thời gian). | Agent / CI / dev |
+| **2 — File Postman** | Collection `module_src/backend/api-tests/postman/RevenueModule.postman_collection.json` + environment `RevenueModule.local.postman_environment.json`. Mỗi folder step có request + tab **Tests** để chạy **Collection Runner** (assert status/shape). Cập nhật collection khi thêm endpoint. | Dev / QA; Runner cho hồi quy nhanh tay |
+| **3 — Manual** | Checklist thao tác tay: REST Client (`.http`), curl, hoặc Postman từng request; ghi nhận kết quả khi cần chứng minh UX lỗi, header, body edge case. | Dev / demo |
+
+**Phạm vi frontend:** không bắt buộc unit test FE trong rule này; smoke browser chỉ khi step yêu cầu rõ. Trọng tâm kênh 1–3 là **backend**.
+
+**Đồng bộ tài liệu:** khi thêm `step-NN-*.ps1`, thêm folder/request tương ứng trong Postman và một khối tối thiểu trong `.http` nếu có; ghi bảng trong `api-tests/README.md`.
+
+**Gate đóng step API:** cả ba kênh đều phải **xanh hoặc pass** trước khi tick step (script và Postman Runner là pass tự động; manual là pass có chứng từ ngắn trong checklist hoặc `issues_history` nếu phát hiện lệch).
+
+## 20. Quy ước đồng bộ tiến độ checklist theo thời gian thực
+
+- Mọi bằng chứng verify (build/test/manual/council) phải được phản ánh ngay vào `devplan_checklist.md` trong cùng phiên thao tác.
+- Nếu phát hiện “đã done nhưng checklist chưa tick”, coi là incident quy trình: log vào `issues_history.md` rồi sửa checklist trước khi qua step mới.
+- Khi một mục chưa thể verify (ví dụ thiếu browser/manual), giữ trạng thái `[ ]` nhưng thêm ghi chú pending rõ ràng trong chính dòng checkpoint để tránh hiểu nhầm.
