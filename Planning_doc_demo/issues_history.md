@@ -9,6 +9,11 @@
 > - Đã xử lý:
 > - Quy ước tiếp theo:
 > ```
+>
+> Severity signal (nhẹ, để scan nhanh):
+> - `[CRITICAL]`: phá gate/khả năng replay, rủi ro drift cao.
+> - `[HIGH]`: ảnh hưởng correctness/UX lớn, nên ưu tiên đọc sớm.
+> - Không gắn nhãn: mức còn lại theo ngữ cảnh.
 
 ---
 
@@ -38,14 +43,14 @@
 - **Đã xử lý:** Không spawn thêm server; dùng instance đang chạy sẵn để smoke HTTP `/lab/products`, `/lab/bill`, `/lab/revenue` đều trả 200.
 - **Quy ước tiếp theo:** Trước khi bật `ng serve` trong automation, kiểm tra cổng 4200; nếu đã có server thì tái sử dụng, tránh lệnh có prompt tương tác.
 
-### 2026-05-07 — Council frontend D6 replay: major đã xử lý, gate pass
+### 2026-05-07 — [HIGH] Council frontend D6 replay: major đã xử lý, gate pass
 
 - **Issue:** Council replay phát hiện 2 major ở implementation products page: (1) race stale response khi nhiều request list chạy chồng; (2) silent truncation giá thập phân.
 - **Tác động:** Có thể hiển thị dữ liệu cũ khi user thao tác nhanh; dữ liệu giá có nguy cơ bị đổi ngầm.
 - **Đã xử lý:** Thêm `listRequestSeq` guard trong `loadList`, reject số thập phân ở input giá (upsert + filter), thêm a11y field mapping (`aria-invalid`/`aria-describedby`) và đồng bộ `maxlength=160`.
 - **Quy ước tiếp theo:** Các flow list có debounce/pagination phải có cơ chế chống stale response; số tiền VND luôn validate integer, không truncate ngầm.
 
-### 2026-05-07 — Council final docs: conflict policy + trạng thái gate chưa nhất quán
+### 2026-05-07 — [CRITICAL] Council final docs: conflict policy + trạng thái gate chưa nhất quán
 
 - **Issue:** Rà soát final docs phát hiện 2 lệch chính: (1) BR ghi “không động `Planning_doc/`” trong khi Lessonlearn yêu cầu mirror policy; (2) trạng thái manual trong `Promt_History` không khớp checklist.
 - **Tác động:** Replay v2 có thể drift do không rõ nguồn chân lý tài liệu và trạng thái thật của step.
@@ -80,7 +85,7 @@
 - **Đã xử lý:** Xác nhận `npx ng serve --host 127.0.0.1 --port 4200` build xong; `Invoke-WebRequest http://127.0.0.1:4200/lab/products` trả **200** và HTML shell có `app-root` + `main.js` (ứng dụng Angular client-render; không kỳ vọng thấy text “Sản phẩm” trong HTML tĩnh).
 - **Quy ước tiếp theo:** Nếu máy khác/trình duyệt khác không vào được `127.0.0.1:4200`, thử `--host 0.0.0.0` và kiểm tra firewall; CORS API đã allow `http://localhost:4200` và `http://127.0.0.1:4200`.
 
-### 2026-05-06 — Council review backend D2: phát hiện FK gap + 4 fix
+### 2026-05-06 — [HIGH] Council review backend D2: phát hiện FK gap + 4 fix
 
 - **Issue:** Adversarial review sau Step D2 phát hiện `BillLine.ProductId` không có FK constraint ở DB schema → race giữa `Any()` check và `SaveChanges()` có thể tạo orphan row, và DB không bảo vệ. Ngoài ra: 409 message tiếng Anh không khớp BR, thiếu validate `priceMin > priceMax`, và missing tests cho `name=null`, `pageSize > 100`, `priceMin > priceMax`.
 - **Tác động:** Race condition tuy hiếm trong demo single-admin nhưng là schema gap thật sự + UX message lệch BR + test coverage có lỗ hổng.
@@ -95,7 +100,7 @@
   - Mọi filter range trên controller mới phải có 400 validation đối xứng với pattern cũ — không silent empty.
   - Council review backend phải verify được cả schema lẫn controller, không chỉ controller surface.
 
-### 2026-05-06 — Council review frontend D6: focus trap incomplete + a11y gaps
+### 2026-05-06 — [CRITICAL] Council review frontend D6: focus trap incomplete + a11y gaps
 
 - **Issue:** Adversarial review sau Step D6 phát hiện 1 critical + 6 major:
   - Forward Tab từ dialog shell (`tabindex="-1"`) không bị bắt → focus thoát modal.
@@ -122,7 +127,7 @@
   - Row action button trong table luôn có `aria-label` chứa context entity.
   - Destructive confirm dialog initial focus trên Hủy, không phải nút Xoá.
 
-### 2026-05-06 — Council review final: 4 landmine trong tài liệu demo_prompt
+### 2026-05-06 — [CRITICAL] Council review final: 4 landmine trong tài liệu demo_prompt
 
 - **Issue:** Adversarial review final phát hiện inconsistency giữa các tài liệu demo:
   1. `devplan_checklist.md` D5-F5 vẫn ghi "> 200 ký tự" trong khi BR + v1 code dùng 160.

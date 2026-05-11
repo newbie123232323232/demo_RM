@@ -73,6 +73,7 @@ public sealed class RevenueDbContext(DbContextOptions<RevenueDbContext> options)
             entity.ToTable(x => x.HasCheckConstraint("CK_BillLines_Qty_Positive", "\"Qty\" > 0"));
             entity.ToTable(x => x.HasCheckConstraint("CK_BillLines_UnitPrice_NonNegative", "\"UnitPriceVnd\" >= 0"));
             entity.HasOne(x => x.Bill).WithMany(x => x.Lines).HasForeignKey(x => x.BillId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(x => x.ProductId);
             entity.HasIndex(x => new { x.ProductId, x.BillId });
         });

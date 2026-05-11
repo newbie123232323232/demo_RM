@@ -39,3 +39,47 @@
 ---
 
 (Phần dưới đây để trống cho timeline v2.)
+
+9. **2026-05-06 17:25 — Chốt cách vận hành prompt trong buổi chạy v2.**
+   - Quyết định dùng một prompt chuẩn duy nhất từ `demo_prompt.md`, sau đó dùng `demo_dry_run_checklist.md` làm gate sau mỗi step.
+   - Không dùng cách dán lại từng prompt cũ theo timeline vì dễ tạo drift và tăng nguy cơ lộ đáp án theo lối replay.
+
+10. **2026-05-06 17:28 — Regenerate checklist thực thi từ BR (no-cheat).**
+   - `devplan_checklist.md` được tái tạo từ `business_requirements.md` theo step D1..D9.
+   - Checklist mới giữ đúng contract bắt buộc (`GET /api/products` no-param => array; có param => paged object).
+
+11. **2026-05-06 17:33 — Bổ sung chế độ vận hành theo trigger chat.**
+   - Thêm quy ước `"bắt đầu test"` => agent làm việc theo chế độ mù context trong phạm vi workspace hiện tại.
+   - Thêm quy ước `"kết thúc test"` => quay lại chế độ làm việc bình thường.
+
+12. **2026-05-06 — Gate D2: council backend replay + D4 kiểm tra khi không mở browser.**
+   - Council backend: không còn critical; bổ sung chứng cứ contract 201 qua assert header `Location` trong test happy-path.
+   - D4: xác nhận dev server phản hồi HTTP cho route `/lab/products` và ghi smoke thay thế vào checklist/issues khi không smoke tay được.
+
+13. **2026-05-07 — Chốt ba kênh test backend song song; FE unit test không bắt buộc trong luật này.**
+   - Lessonlearn §19: kênh script/`dotnet test`, kênh Postman collection + Runner, kênh manual; đồng bộ `api-tests/README` và mirror ngắn trong `Planning_doc/Lessonlearn.md`.
+   - Bổ sung smoke script + `.http` D2 và folder Postman có Tests cho Products.
+
+14. **2026-05-07 — Hoàn thiện D5/D6 trên `/lab/products` (implementation).**
+   - Modal thêm/sửa: POST/PUT, validation blur + lỗi server assertive, focus trap đủ ba nhánh, scroll lock + return focus.
+   - Modal xoá: focus nút Hủy, 409/404 giữ dialog + `aria-label` hàng; manual smoke còn pending ở D7, council FE giao D7.
+
+15. **2026-05-07 — Siết rule cập nhật tiến độ checklist + tiếp tục D7 verify.**
+   - Bổ sung rule bắt buộc update tick ngay khi có bằng chứng runtime/test/council; log issue riêng cho drift checklist.
+   - Tiếp tục D7 bằng chứng tự động: lint sạch, backend test pass, smoke HTTP 200 cho `/lab/products`, `/lab/bill`, `/lab/revenue` qua dev server hiện có.
+
+16. **2026-05-07 — Council frontend D6 replay pass sau vòng fix major.**
+   - Vòng 1 nêu major về stale response và truncation số thập phân; đã fix ngay trong products component.
+   - Vòng re-check theo BR/devplan không còn critical/major; checkpoint council D6 được tick.
+
+17. **2026-05-07 — Bổ sung chứng từ kênh Postman bằng Newman.**
+   - Chạy collection folder `D2 — Products (smoke + contracts)` bằng `npx newman run ... --folder ...`; 6 requests, 10 assertions, 0 failed.
+   - D7/Postman checkpoint được tick; manual smoke vẫn giữ pending theo rule checklist.
+
+18. **2026-05-07 — Chuẩn hoá dependency cho task pending trong checklist.**
+   - Bổ sung rule: không chuyển step khi còn task `[ ]` nếu chưa ghi dependency rõ (`Pending: phụ thuộc Step Dx - ...`).
+   - Annotate lại các task pending ở D2/D5/D6/D7 và tick các mục D9 đã có bằng chứng (council final + no critical).
+
+19. **2026-05-07 — Chuẩn hoá format checklist và chốt output D9.**
+   - Rule mới: task dùng `-`, tiêu chí/spec/validation dùng `+` để tránh nhầm “task con chưa tick”.
+   - Tạo `Planning_doc_demo/final_output_d9.md` theo đúng format `demo_prompt.md` và tick complete cho D9 output/report.

@@ -1,0 +1,27 @@
+### D2 — Products smoke (REST Client). Đặt @base phù hợp cổng đang chạy.
+
+@base = http://localhost:5093
+
+### Health
+GET {{base}}/health
+
+### List — không query (JSON array)
+GET {{base}}/api/products
+
+### List — phân trang
+GET {{base}}/api/products?page=1&pageSize=2
+
+### Validation — priceMin > priceMax
+GET {{base}}/api/products?priceMin=100&priceMax=50
+
+### Tạo sản phẩm (đổi tên mỗi lần nếu trùng)
+POST {{base}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Manual smoke product",
+  "unitPriceVnd": 15000
+}
+
+### Xoá — thay :id bằng id vừa tạo
+DELETE {{base}}/api/products/:id

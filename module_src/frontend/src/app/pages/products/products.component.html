@@ -1,0 +1,247 @@
+<section class="page">
+  <header class="products-header">
+    <h1>Sản phẩm</h1>
+    <p class="hint">Quản lý danh sách sản phẩm (admin). Lọc theo tên và khoảng giá; thêm, sửa hoặc xoá từ bảng bên dưới.</p>
+  </header>
+
+  <section class="card card-tight" aria-label="Bộ lọc">
+    <h2 class="card-title">Lọc</h2>
+    <div class="filter-grid">
+      <label>
+        Tìm theo tên
+        <input
+          type="search"
+          name="productSearch"
+          [ngModel]="searchTerm"
+          (input)="onSearchInput($any($event.target).value)"
+          autocomplete="off"
+          placeholder="Nhập từ khoá..."
+        />
+      </label>
+      <label>
+        Giá tối thiểu (VND)
+        <input
+          type="number"
+          name="priceMin"
+          [ngModel]="priceMinInput"
+          (input)="onPriceMinInput($any($event.target).value)"
+          min="0"
+          step="1"
+          placeholder="Để trống = không lọc"
+        />
+      </label>
+      <label>
+        Giá tối đa (VND)
+        <input
+          type="number"
+          name="priceMax"
+          [ngModel]="priceMaxInput"
+          (input)="onPriceMaxInput($any($event.target).value)"
+          min="0"
+          step="1"
+          placeholder="Để trống = không lọc"
+        />
+      </label>
+      @if (filterErrorMessage) {
+        <p class="field-error filter-error" role="alert" aria-live="polite">{{ filterErrorMessage }}</p>
+      }
+      <div class="filter-actions">
+        <button type="button" class="btn-ghost" (click)="resetFilters()">Reset bộ lọc</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card-flush products-list-card" aria-label="Danh sách sản phẩm">
+    <div class="section-head">
+      <h2 class="section-title">Danh sách</h2>
+      <button type="button" class="btn-primary" (click)="onAddClick()">Thêm sản phẩm</button>
+    </div>
+
+    @if (errorMessage) {
+      <p class="error section-error" role="alert" aria-live="assertive">{{ errorMessage }}</p>
+    }
+
+    @if (loading) {
+      <p class="hint section-pad">Đang tải sản phẩm...</p>
+    } @else if (!errorMessage && items.length === 0) {
+      <div class="empty-state section-pad">
+        <p>Không có sản phẩm phù hợp với bộ lọc.</p>
+      </div>
+    } @else if (!loading && items.length > 0) {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Tên</th>
+              <th class="col-num">Đơn giá (VND)</th>
+              <th class="col-actions">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of items; track p.id) {
+              <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.name }}</td>
+                <td class="col-num">{{ p.unitPriceVnd | number : '1.0-0' }}</td>
+                <td class="col-actions">
+                  <button type="button" class="btn-sm" [attr.aria-label]="'Sửa ' + p.name" (click)="onEditClick(p)">
+                    Sửa
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-sm btn-danger"
+                    [attr.aria-label]="'Xoá ' + p.name"
+                    (click)="onDeleteClick(p)">
+                    Xoá
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination-bar">
+        <div class="pagination-nav">
+          <button type="button" [disabled]="currentPage <= 1 || loading" (click)="prevPage()">Trang trước</button>
+          <span class="pagination-meta">
+            Trang {{ currentPage }} / {{ totalPages > 0 ? totalPages : 1 }}
+            <span class="muted">({{ totalCount }} SP)</span>
+          </span>
+          <button type="button" [disabled]="loading || !canGoNext" (click)="nextPage()">Trang sau</button>
+        </div>
+        <label class="page-size">
+          SP/trang
+          <select [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)" [disabled]="loading">
+            <option [ngValue]="5">5</option>
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="15">15</option>
+            <option [ngValue]="20">20</option>
+          </select>
+        </label>
+      </div>
+    }
+  </section>
+</section>
+
+@if (upsertOpen) {
+  <div class="modal-backdrop" (click)="onUpsertBackdropClick($event)">
+    <div
+      #upsertDialog
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="products-upsert-title"
+      tabindex="-1"
+      (keydown.escape)="onUpsertEscape()"
+      (keydown)="onUpsertKeydown($event)"
+      (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 id="products-upsert-title" class="modal-title">{{ upsertTitle }}</h2>
+        <button
+          type="button"
+          class="btn-ghost btn-sm"
+          (click)="closeUpsert()"
+          [disabled]="upsertBusy"
+          aria-label="Đóng hộp thoại">
+          ×
+        </button>
+      </div>
+
+      @if (upsertServerError) {
+        <p id="products-upsert-server-error" class="error modal-error" role="alert" aria-live="assertive">
+          {{ upsertServerError }}
+        </p>
+      }
+
+      <div class="modal-body">
+        <label>
+          Tên sản phẩm
+          <input
+            type="text"
+            name="upsertName"
+            [(ngModel)]="upsertName"
+            (ngModelChange)="onUpsertNameInput()"
+            (blur)="onUpsertNameBlur()"
+            maxlength="160"
+            autocomplete="off"
+            [attr.aria-invalid]="upsertNameError ? 'true' : null"
+            [attr.aria-describedby]="upsertNameError ? 'upsert-name-error' : null"
+            [disabled]="upsertBusy"
+          />
+        </label>
+        @if (upsertNameError) {
+          <p id="upsert-name-error" class="field-error" role="alert" aria-live="polite">{{ upsertNameError }}</p>
+        }
+
+        <label>
+          Đơn giá (VND)
+          <input
+            type="number"
+            name="upsertPrice"
+            [(ngModel)]="upsertPriceInput"
+            (ngModelChange)="onUpsertPriceInput()"
+            (blur)="onUpsertPriceBlur()"
+            min="1"
+            step="1"
+            [attr.aria-invalid]="upsertPriceError ? 'true' : null"
+            [attr.aria-describedby]="upsertPriceError ? 'upsert-price-error' : null"
+            [disabled]="upsertBusy"
+          />
+        </label>
+        @if (upsertPriceError) {
+          <p id="upsert-price-error" class="field-error" role="alert" aria-live="polite">{{ upsertPriceError }}</p>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" (click)="closeUpsert()" [disabled]="upsertBusy">Hủy</button>
+        <button type="button" class="btn-primary" (click)="submitUpsert()" [disabled]="upsertBusy">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (deleteOpen && pendingDelete) {
+  <div class="modal-backdrop" (click)="onDeleteBackdropClick($event)">
+    <div
+      #deleteDialog
+      class="modal-dialog modal-dialog-narrow"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="products-delete-title"
+      aria-describedby="products-delete-desc"
+      tabindex="-1"
+      (keydown.escape)="onDeleteEscape()"
+      (keydown)="onDeleteKeydown($event)"
+      (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 id="products-delete-title" class="modal-title">Xác nhận xoá</h2>
+        <button
+          type="button"
+          class="btn-ghost btn-sm"
+          (click)="closeDelete()"
+          [disabled]="deleteBusy"
+          aria-label="Đóng hộp thoại">
+          ×
+        </button>
+      </div>
+
+      <p id="products-delete-desc" class="modal-body-text">
+        Bạn có chắc muốn xoá sản phẩm "{{ pendingDelete.name }}"? Hành động này không thể hoàn tác.
+      </p>
+
+      @if (deleteServerError) {
+        <p class="error modal-error" role="alert" aria-live="assertive">{{ deleteServerError }}</p>
+      }
+
+      <div class="modal-footer">
+        <button #deleteCancelBtn type="button" class="btn-ghost" (click)="closeDelete()" [disabled]="deleteBusy">
+          Hủy
+        </button>
+        <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="deleteBusy">Xoá</button>
+      </div>
+    </div>
+  </div>
+}

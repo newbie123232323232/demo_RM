@@ -1,43 +1,53 @@
-# API tests — hai luồng song song (chốt)
+# API tests — ba kênh backend song song (chốt)
 
-## Nguyên tắc
+Chi tiết lý do và gate đóng step: `Planning_doc_demo/Lessonlearn.md` mục **§19**.
 
-| Luồng | Ai dùng | Mục đích |
-|--------|---------|----------|
-| **A — Script trong repo** | Agent / CI / bạn chạy lệnh | Hồi quy nhanh, lặp lại được, gắn với từng **Step** trong `devplan_checklist.md`. |
-| **B — Công cụ bên ngoài** | Bạn (Postman, Insomnia, curl tay, …) | Khám phá API, edge case, header/auth sau này. |
+## Ba kênh (chạy song song, không thay thế lẫn nhau)
 
-Mỗi khi **hoàn thành một Step** có API mới:
+| Kênh | Tài sản trong repo | Mục đích |
+|------|-------------------|----------|
+| **1 — Script + automated** | `dotnet test` trên `RevenueModule.Api.Tests` + file `step-*-*.ps1` dưới đây | Hồi quy nhanh, lặp lại được; agent/CI chạy và dán output. |
+| **2 — Postman** | `postman/RevenueModule.postman_collection.json` + `postman/RevenueModule.local.postman_environment.json` | Collection Runner: assert status/body; khám phá API. |
+| **3 — Manual** | File `step-*-*.http` (REST Client), hoặc Postman từng request, curl | Edge case, quan sát header/body, demo tay. |
 
-1. Thêm (hoặc cập nhật) file **`step-NN-*.ps1`** và tốt nhất kèm **`step-NN-*.http`** cùng mô tả trong README này (bảng dưới).
-2. Cập nhật **Postman** (folder tương ứng Step, request trùng endpoint + body mẫu).
+**Frontend:** không nằm trong bộ ba này trừ khi step yêu cầu rõ (xem Lessonlearn §19).
 
-**Biến môi trường chung**
+## Biến môi trường
 
-- `BASE_URL` = `http://localhost:5093` (profile `http` của `RevenueModule.Api`).
+- `BASE_URL` — mặc định `http://localhost:5093` (profile `http` của `RevenueModule.Api`). Có thể `http://127.0.0.1:5093`.
 
 ## Chạy script (Windows PowerShell)
 
 ```powershell
 cd d:\BT_intdemo1\marketify-mini-ecommerce\module_src\backend\api-tests
 .\step-00-health.ps1
+$env:BASE_URL = 'http://127.0.0.1:5093'
+.\step-d2-products-smoke.ps1
 ```
 
-Nếu API chạy cổng khác: `$env:BASE_URL = 'http://localhost:XXXX'; .\step-00-health.ps1`
+API phải đang chạy (`dotnet run` trong `RevenueModule.Api`).
 
-## File `.http`
+## `dotnet test` (cùng kênh 1)
 
-Mở bằng VS Code (extension REST Client) hoặc JetBrains — click **Send Request** trên từng khối.
+```powershell
+dotnet test "d:\BT_intdemo1\marketify-mini-ecommerce\module_src\backend\RevenueModule.Api.Tests\RevenueModule.Api.Tests.csproj"
+```
 
-## Bảng script theo Step
+## Postman (kênh 2)
 
-| Step | Script | Endpoint / ghi chú |
-|------|--------|-------------------|
-| 0 | `step-00-health.ps1`, `step-00-health.http` | `GET /health`, `GET /` |
-| 1+ | *(thêm khi implement)* | buyers, products, … |
+1. Import **Collection:** `postman/RevenueModule.postman_collection.json`
+2. Import **Environment:** `postman/RevenueModule.local.postman_environment.json`
+3. Chọn env **RevenueModule local**, mở folder **D2 — Products**, **Run collection** (theo thứ tự folder).
 
-## Postman — file import dùng chung toàn module
+## File `.http` (kênh 3 — gợi ý manual)
 
-1. Import **Collection dùng chung:** `../../test/RevenueModule.postman_collection.json`
-2. (Tuỳ chọn) Import **Environment cũ:** `postman/RevenueModule.local.postman_environment.json` hoặc tự tạo env `baseUrl=http://localhost:5093`.
-3. Mỗi Step done: thêm folder/request vào **cùng file collection dùng chung** để đồng bộ với `step-NN-*.ps1`.
+Mở trong VS Code (REST Client) hoặc tương đương.
+
+## Bảng script theo step
+
+| Step | Script `.ps1` | `.http` | Postman folder |
+|------|----------------|---------|----------------|
+| 0 | `step-00-health.ps1` | `step-00-health.http` | Step 0 — Smoke |
+| D2 Products | `step-d2-products-smoke.ps1` | `step-d2-products-smoke.http` | D2 — Products (smoke + contracts) |
+
+Khi thêm step API mới: thêm một dòng bảng + cập nhật Postman + Lessonlearn nếu đổi quy ước.

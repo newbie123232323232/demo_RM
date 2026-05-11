@@ -2,13 +2,21 @@
   "info": {
     "_postman_id": "a1b2c3d4-revenue-module",
     "name": "RevenueModule API",
-    "description": "Import vào Postman; cập nhật từng Step khi có endpoint mới. Dùng kèm Environment `RevenueModule.local.postman_environment.json`.",
+    "description": "Ba kênh test backend song song: (1) dotnet test + step-*.ps1 trong repo, (2) Collection Runner trên file này, (3) manual từng request.\n\nImport Environment: RevenueModule.local.postman_environment.json (baseUrl).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:5093"
+    },
+    {
+      "key": "productId",
+      "value": ""
+    },
+    {
+      "key": "smokeProductName",
+      "value": ""
     }
   ],
   "item": [
@@ -17,6 +25,19 @@
       "item": [
         {
           "name": "GET /health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const j = pm.response.json();",
+                  "pm.test(\"status ok\", function () { pm.expect(j.status).to.eql(\"ok\"); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -37,6 +58,157 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/WeatherForecast"
+          }
+        }
+      ]
+    },
+    {
+      "name": "D2 — Products (smoke + contracts)",
+      "item": [
+        {
+          "name": "GET /api/products (no query → array)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Body is JSON array\", function () {",
+                  "  pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products"
+          }
+        },
+        {
+          "name": "GET /api/products?page=1&pageSize=2 (paged)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Paged shape\", function () {",
+                  "  pm.expect(j).to.have.keys(\"items\", \"page\", \"pageSize\", \"totalCount\", \"totalPages\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products?page=1&pageSize=2"
+          }
+        },
+        {
+          "name": "GET /api/products invalid price range → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products?priceMin=100&priceMax=50"
+          }
+        },
+        {
+          "name": "POST /api/products (smoke create)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const t = Date.now();",
+                  "pm.collectionVariables.set(\"smokeProductName\", \"PostmanSmoke-\" + t);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                  "const j = pm.response.json();",
+                  "pm.test(\"Has id\", function () { pm.expect(j).to.have.property(\"id\"); });",
+                  "pm.collectionVariables.set(\"productId\", String(j.id));",
+                  "pm.test(\"Location present\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Location\")).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{smokeProductName}}\",\n  \"unitPriceVnd\": 12000\n}"
+            },
+            "url": "{{baseUrl}}/api/products"
+          }
+        },
+        {
+          "name": "DELETE /api/products/{{productId}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/products/{{productId}}"
+          }
+        },
+        {
+          "name": "GET /api/products/{{productId}} after delete → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/products/{{productId}}"
           }
         }
       ]
