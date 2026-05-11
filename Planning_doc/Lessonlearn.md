@@ -2,34 +2,34 @@
 
 ## Luật tổ chức: `module_src` (độc lập tuyệt đối về code)
 
-**Ngữ cảnh:** Module doanh thu / VipPoint là **thử nghiệm**, không gắn deploy vào dự án gốc. Cần **độc lập cả khi đọc và điều tra**, không phụ thuộc biên dịch hay tài nguyên của `MarketifyBackend`, `MarketifyClient`, v.v.
+**Ngữ cảnh:** Module doanh thu / VipPoint là **thử nghiệm**, không gắn deploy vào codebase legacy. Cần **độc lập cả khi đọc và điều tra**, không phụ thuộc biên dịch hay tài nguyên ngoài `module_src`.
 
 ### Chốt
 
-1. **Vị trí:** Thư mục gốc **`module_src/`** nằm **ngang hàng** với `MarketifyBackend/`, `MarketifyClient/`, `Planning_doc/`, … trong cùng repository.
+1. **Vị trí:** Thư mục gốc **`module_src/`** là boundary triển khai duy nhất của module; phần còn lại của repo chỉ đóng vai trò tài liệu/hỗ trợ.
 2. **Cấu trúc tối thiểu:**
    - `module_src/backend/` — backend **riêng** của module (ví dụ `RevenueModule.Api`).
    - `module_src/frontend/` — frontend **riêng** của module (ứng dụng Angular/UI độc lập).
-3. **Cấm tái sử dụng tài nguyên codebase gốc (hard rule):**
-   - **Không** thêm `ProjectReference`, `PackageReference` trỏ tới project trong `MarketifyBackend/`.
-   - **Không** import/copy file nguồn từ `MarketifyClient/src/...` vào `module_src/frontend` (trừ khi là **tài liệu** hoặc **đoạn mẫu đã rewrite** hoàn toàn — vẫn ưu tiên viết mới).
+3. **Cấm tái sử dụng tài nguyên codebase legacy (hard rule):**
+   - **Không** thêm `ProjectReference`/`PackageReference` trỏ tới bất kỳ project nào ngoài cây `module_src/backend`.
+   - **Không** import/copy file nguồn UI từ cây legacy vào `module_src/frontend` (trừ trường hợp tài liệu tham khảo; nếu dùng ý tưởng thì phải rewrite sạch trong module).
    - **Không** dùng chung `DbContext`, migration, connection factory, auth middleware, hay đường dẫn build của solution gốc.
    - **Không** symlink thư mục từ repo gốc vào `module_src`.
-4. **Tham chiếu chặt chẽ với codebase gốc (được phép, chỉ ở lớp “ý tưởng”):**
+4. **Tham chiếu kiến thức (được phép, chỉ ở lớp “ý tưởng”):**
    - So sánh **stack** (.NET, Angular, PostgreSQL) và **pattern** ở mức khái niệm.
    - Đối chiếu hành vi với **`Planning_doc/business_requirements.md`** — đây là **hợp đồng nghiệp vụ** chung; code triển khai **chỉ** trong `module_src`.
-   - Khi cần “xem gốc làm thế nào”, mở `Marketify*` **chỉ để đọc**, không merge code.
+  - Nếu cần ví dụ triển khai, dùng pattern mô tả trong tài liệu (`business_requirements`, `devplan_checklist`, `issues_history`, `Lessonlearn`) thay vì kéo code thô.
 5. **Lợi ích đã học:** Giữ một cây mã nguồn monorepo để tiện **diff tài liệu / BRD**, nhưng **biên điều tra và build** của module thử nghiệm **gói gọn trong `module_src/`** — tránh lạc vào toàn bộ e-commerce legacy.
 
 ### Vi phạm
 
-Mọi PR/commit đưa `ProjectReference` tới `MarketifyBackend` hoặc import trực tiếp từ `MarketifyClient` vào `module_src` coi là **vi phạm luật module thử nghiệm**; cần revert hoặc tách sang repo riêng nếu mục tiêu thay đổi.
+Mọi PR/commit đưa phụ thuộc code từ ngoài `module_src` vào module coi là **vi phạm luật module thử nghiệm**; cần revert hoặc tách module sang repository riêng nếu mục tiêu thay đổi.
 
 ---
 
 ## Khởi chạy module (`module_src`) — local dev
 
-**Không cần** chạy `MarketifyBackend` / `MarketifyClient`. Chỉ cần hai terminal (API + Angular), trừ khi đã tích hợp Postgres và muốn test DB.
+**Không cần** chạy bất kỳ service legacy ngoài `module_src`. Chỉ cần hai terminal (API + Angular), trừ khi đã tích hợp Postgres và muốn test DB.
 
 ### Cổng mặc định (theo scaffold hiện tại)
 

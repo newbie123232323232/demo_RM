@@ -2,7 +2,7 @@
 
 Tài liệu gom toàn bộ nghiệp vụ đã thống nhất trong phiên làm việc spec. Phiên bản này phục vụ lập kế hoạch triển khai trên codebase **marketify-mini-ecommerce** (.NET + Angular + PostgreSQL).
 
-**Triển khai module thử nghiệm (độc lập):** mã nguồn nằm trong **`module_src/`**; quy tắc tách biệt với `MarketifyBackend` / `MarketifyClient` xem **`Planning_doc/Lessonlearn.md`**.
+**Triển khai module thử nghiệm (độc lập):** mã nguồn nằm trong **`module_src/`**; mọi tham chiếu/phụ thuộc vào codebase legacy ngoài `module_src` đều bị cấm (chi tiết tại **`Planning_doc/Lessonlearn.md`**).
 
 ---
 

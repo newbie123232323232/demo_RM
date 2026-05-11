@@ -50,7 +50,7 @@ Mỗi **bước (Step)** dưới đây là một khối công việc lớn và *
 ### Kiểm thử tay (Definition of Done Step 0)
 
 - [x] **0-T1.** `dotnet run` (API) + `ng serve` (FE), gọi health từ browser hoặc FE hiển thị “API OK”.
-- [x] **0-T2.** Không cần chạy `MarketifyBackend` / `MarketifyClient`.
+- [x] **0-T2.** Không cần chạy bất kỳ service legacy ngoài `module_src`; chỉ cần API + FE của module này.
 - [x] **0-T3.** **Hai luồng test (chốt — xem `Lessonlearn.md` + `module_src/backend/api-tests/README.md`):** chạy `api-tests/step-00-health.ps1` (hoặc `.http`); song song kiểm tra **`GET /health`** trong Postman với `baseUrl` = `http://localhost:5093`.
 
 ---

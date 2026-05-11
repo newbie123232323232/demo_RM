@@ -1,6 +1,6 @@
 # RevenueModuleUi (`module_src/frontend`)
 
-**Thuộc module thử nghiệm độc lập.** Không import hay copy mã từ `MarketifyClient/`. Quy tắc đầy đủ: `Planning_doc/Lessonlearn.md` và `../README.md`.
+**Thuộc module thử nghiệm độc lập.** Không import/copy mã UI từ codebase legacy ngoài `module_src`. Quy tắc đầy đủ: `Planning_doc/Lessonlearn.md` và `../README.md`.
 
 **Routes (khớp `devplan_checklist.md`):** `/lab/bill` (Page 1), `/lab/revenue` (Page 2); `/` redirect tới `/lab/bill`. API dev: `src/environments/environment.ts` → mặc định `http://localhost:5093`.
 
