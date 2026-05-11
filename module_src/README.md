@@ -49,7 +49,7 @@ If browser shows `ERR_CONNECTION_REFUSED` for `localhost:5093`:
 4) Verify one business endpoint (`/api/buyers`) returns `200` before debugging business logic.
 # module_src — Revenue / VipPoint (thử nghiệm)
 
-Thư mục này chứa **toàn bộ** mã nguồn backend và frontend của module thử nghiệm, **tách biệt** với `MarketifyBackend` và `MarketifyClient`.
+Thư mục này chứa **toàn bộ** mã nguồn backend và frontend của module thử nghiệm, vận hành độc lập và không tham chiếu code ngoài `module_src`.
 
 ## Cấu trúc
 
@@ -79,7 +79,7 @@ Thư mục này chứa **toàn bộ** mã nguồn backend và frontend của mod
 Xem **`Planning_doc/Lessonlearn.md`**. Tóm tắt:
 
 
-- **Không** reference, import, hay chia sẻ build với project trong `MarketifyBackend` / `MarketifyClient`.
+- **Không** reference, import, hay chia sẻ build với bất kỳ project nào ngoài `module_src`.
 - **Được** tham chiếu nghiệp vụ từ `Planning_doc/business_requirements.md` và checklist tương ứng.
 
 ## Chạy nhanh (local)
